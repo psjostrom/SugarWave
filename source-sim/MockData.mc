@@ -5,7 +5,7 @@ import Toybox.Time;
 // Simulator-only mock CGM data. Excluded from device builds via monkey.jungle.
 module MockData {
     function seed() as Void {
-        if (Application.Storage.getValue("cgmReadings") != null) { return; }
+        // Always re-seed so timestamp stays relative to now
         var sgvs = [252, 270, 280, 275, 260, 245, 230, 220, 210, 200,
                     195, 190, 185, 180, 175, 170, 165, 160, 155, 150,
                     145, 140, 138, 135];

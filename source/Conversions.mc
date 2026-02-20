@@ -85,7 +85,7 @@ module Conversions {
 
     function staleColor(minutes as Number) as Number {
         if (minutes < 0) { return COLOR_NEON_CYAN; }
-        if (minutes < 5) { return COLOR_NEON_CYAN; }
+        if (minutes < 6) { return COLOR_NEON_CYAN; }
         if (minutes < STALE_MINUTES) { return COLOR_STALE_WARNING; }
         return COLOR_STALE;
     }

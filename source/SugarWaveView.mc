@@ -46,12 +46,25 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     function onUpdate(dc as Dc) as Void {
         loadCgmData();
+        watchdogBgService();
 
         if (mIsHighPower || !mLowPowerEnabled) {
             drawHighPower(dc);
         } else {
             drawLowPower(dc);
         }
+    }
+
+    // Re-register background service if it hasn't fired in 10+ minutes
+    hidden function watchdogBgService() as Void {
+        try {
+            if (!(Toybox.System has :ServiceDelegate)) { return; }
+            if (!System.getDeviceSettings().phoneConnected) { return; }
+            var lastTime = Background.getLastTemporalEventTime();
+            if (lastTime == null || lastTime.value() < Time.now().value() - 600) {
+                Background.registerForTemporalEvent(Time.now());
+            }
+        } catch (ex) {}
     }
 
     function onExitSleep() as Void {
@@ -366,9 +379,17 @@ class SugarWaveView extends WatchUi.WatchFace {
         x += arrowSize + gap;
 
         // BG value — crisp neon
+        var bgX = x;
         dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, cy, bgFont, bgText,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        // Strikethrough when data is ≥10 min stale
+        if (minutesSince >= Conversions.STALE_MINUTES) {
+            dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
+            dc.setPenWidth(3);
+            dc.drawLine(bgX, cy, bgX + bgW, cy);
+            dc.setPenWidth(1);
+        }
         x += bgW + gap;
 
         // Delta — white for max contrast (21:1)
