@@ -1,0 +1,11 @@
+<strings>
+    <string id="AppName">SugarWave</string>
+    <string id="bgLowTitle">Low Threshold (mmol/L)</string>
+    <string id="bgHighTitle">High Threshold (mmol/L)</string>
+    <string id="graphDurationTitle">Graph Duration</string>
+    <string id="comp1Title">Complication 1</string>
+    <string id="comp2Title">Complication 2</string>
+    <string id="comp3Title">Complication 3</string>
+    <string id="comp4Title">Complication 4</string>
+<string id="lowPowerModeTitle">Always-On Display</string>
+</strings>

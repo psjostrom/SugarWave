@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <iq:application id="affec950-8880-49e7-9af3-3f0f94dd56de" type="watchface"
+        name="@Strings.AppName" entry="SugarWaveApp" launcherIcon="@Drawables.LauncherIcon"
+        minSdkVersion="2.4.0">
+        <iq:products>
+            <iq:product id="fr970"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="Background"/>
+            <iq:uses-permission id="Communications"/>
+            <iq:uses-permission id="ComplicationSubscriber"/>
+            <iq:uses-permission id="SensorHistory"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>

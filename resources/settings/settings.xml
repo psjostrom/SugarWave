@@ -1,0 +1,91 @@
+<settings>
+    <setting propertyKey="@Properties.bgLow" title="@Strings.bgLowTitle">
+        <settingConfig type="list">
+            <listEntry value="30">3.0</listEntry>
+            <listEntry value="35">3.5</listEntry>
+            <listEntry value="40">4.0</listEntry>
+            <listEntry value="45">4.5</listEntry>
+            <listEntry value="50">5.0</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.bgHigh" title="@Strings.bgHighTitle">
+        <settingConfig type="list">
+            <listEntry value="70">7.0</listEntry>
+            <listEntry value="80">8.0</listEntry>
+            <listEntry value="90">9.0</listEntry>
+            <listEntry value="100">10.0</listEntry>
+            <listEntry value="110">11.0</listEntry>
+            <listEntry value="120">12.0</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.graphDuration" title="@Strings.graphDurationTitle">
+        <settingConfig type="list">
+            <listEntry value="30">30 min</listEntry>
+            <listEntry value="60">60 min</listEntry>
+            <listEntry value="90">90 min</listEntry>
+            <listEntry value="120">120 min</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.comp1" title="@Strings.comp1Title">
+        <settingConfig type="list">
+            <listEntry value="0">Steps</listEntry>
+            <listEntry value="1">Floors</listEntry>
+            <listEntry value="2">Heart Rate</listEntry>
+            <listEntry value="3">Temperature</listEntry>
+            <listEntry value="4">Stress</listEntry>
+            <listEntry value="5">Recovery Time</listEntry>
+            <listEntry value="6">Calories</listEntry>
+            <listEntry value="7">Body Battery</listEntry>
+            <listEntry value="8">Watch Battery</listEntry>
+            <listEntry value="9">Notifications</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.comp2" title="@Strings.comp2Title">
+        <settingConfig type="list">
+            <listEntry value="0">Steps</listEntry>
+            <listEntry value="1">Floors</listEntry>
+            <listEntry value="2">Heart Rate</listEntry>
+            <listEntry value="3">Temperature</listEntry>
+            <listEntry value="4">Stress</listEntry>
+            <listEntry value="5">Recovery Time</listEntry>
+            <listEntry value="6">Calories</listEntry>
+            <listEntry value="7">Body Battery</listEntry>
+            <listEntry value="8">Watch Battery</listEntry>
+            <listEntry value="9">Notifications</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.comp3" title="@Strings.comp3Title">
+        <settingConfig type="list">
+            <listEntry value="0">Steps</listEntry>
+            <listEntry value="1">Floors</listEntry>
+            <listEntry value="2">Heart Rate</listEntry>
+            <listEntry value="3">Temperature</listEntry>
+            <listEntry value="4">Stress</listEntry>
+            <listEntry value="5">Recovery Time</listEntry>
+            <listEntry value="6">Calories</listEntry>
+            <listEntry value="7">Body Battery</listEntry>
+            <listEntry value="8">Watch Battery</listEntry>
+            <listEntry value="9">Notifications</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.comp4" title="@Strings.comp4Title">
+        <settingConfig type="list">
+            <listEntry value="0">Steps</listEntry>
+            <listEntry value="1">Floors</listEntry>
+            <listEntry value="2">Heart Rate</listEntry>
+            <listEntry value="3">Temperature</listEntry>
+            <listEntry value="4">Stress</listEntry>
+            <listEntry value="5">Recovery Time</listEntry>
+            <listEntry value="6">Calories</listEntry>
+            <listEntry value="7">Body Battery</listEntry>
+            <listEntry value="8">Watch Battery</listEntry>
+            <listEntry value="9">Notifications</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.lowPowerMode" title="@Strings.lowPowerModeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">Enabled</listEntry>
+            <listEntry value="1">Disabled</listEntry>
+        </settingConfig>
+    </setting>
+</settings>
