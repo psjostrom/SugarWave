@@ -1,6 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Time;
 
 module GraphRenderer {
 
@@ -49,7 +50,8 @@ module GraphRenderer {
         // Filter and plot data
         if (history.size() == 0) { return; }
 
-        var newestTime = (history[0] as Dictionary)[:time] as Long;
+        // Use wall clock as right edge so stale data scrolls left
+        var newestTime = Time.now().value().toLong() * 1000l;
         var durationMs = durationMin.toLong() * 60000l;
         var oldestTime = newestTime - durationMs;
 
@@ -156,7 +158,8 @@ module GraphRenderer {
         // Plot data
         if (history.size() == 0) { return; }
 
-        var newestTime = (history[0] as Dictionary)[:time] as Long;
+        // Use wall clock as right edge so stale data scrolls left
+        var newestTime = Time.now().value().toLong() * 1000l;
         var durationMs = durationMin.toLong() * 60000l;
         var oldestTime = newestTime - durationMs;
 

@@ -337,11 +337,27 @@ class SugarWaveView extends WatchUi.WatchFace {
         var bgText = bgMmol.format("%.1f");
         var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-        var direction = Conversions.directionFromString(
-            latest.hasKey("direction") ? latest["direction"] as String : null);
-        var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
+        // Compute delta + direction from sgv values (xDrip+ companion mode
+        // returns stale/wrong delta and direction fields — issue #3787)
+        var deltaMgdl = 0.0f;
+        if (mReadings.size() >= 2) {
+            var prev = mReadings[1] as Dictionary;
+            if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
+                latest.hasKey("date") && prev.hasKey("date")) {
+                var t0 = Conversions.parseLong(latest["date"]);
+                var t1 = Conversions.parseLong(prev["date"]);
+                var dtMs = t0 - t1;
+                if (dtMs > 0) {
+                    deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
+                        / (dtMs.toFloat() / 300000.0f);
+                }
+            }
+        } else if (latest.hasKey("delta")) {
+            deltaMgdl = Conversions.parseFloat(latest["delta"]);
+        }
         var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
         var deltaText = Conversions.formatDelta(deltaMmol);
+        var direction = Conversions.directionFromDelta(deltaMgdl);
 
         var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
         var minutesSince = lastTime > 0 ?

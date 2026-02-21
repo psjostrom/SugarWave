@@ -71,6 +71,18 @@ module Conversions {
         return DIRECTION_NONE;
     }
 
+    // Derive trend direction from computed delta (mg/dL per 5 min).
+    // Same thresholds as SuperStable / xDrip+ internals.
+    function directionFromDelta(deltaMgdl as Float) as Direction {
+        if (deltaMgdl <= -17.5f) { return DIRECTION_DOUBLE_DOWN; }
+        if (deltaMgdl <= -10.0f) { return DIRECTION_SINGLE_DOWN; }
+        if (deltaMgdl <= -5.0f) { return DIRECTION_FORTY_FIVE_DOWN; }
+        if (deltaMgdl <= 5.0f) { return DIRECTION_FLAT; }
+        if (deltaMgdl <= 10.0f) { return DIRECTION_FORTY_FIVE_UP; }
+        if (deltaMgdl <= 17.5f) { return DIRECTION_SINGLE_UP; }
+        return DIRECTION_DOUBLE_UP;
+    }
+
     function bgColor(mmol as Float, low as Float, high as Float) as Number {
         if (mmol < low) { return COLOR_LOW; }
         if (mmol > high) { return COLOR_HIGH; }
