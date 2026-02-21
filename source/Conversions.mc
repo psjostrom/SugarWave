@@ -27,8 +27,8 @@ module Conversions {
     const COLOR_NEON_RED = 0xFF5555;
     const COLOR_NEON_BLUE = 0x0088FF;
 
-    // Bright purple for date text — WCAG AA on black (5.9:1)
-    const COLOR_DATE = 0xBB66FF;
+    // Light purple for date text — WCAG AAA on black (9.6:1)
+    const COLOR_DATE = 0xCC99FF;
 
     // Dim glow halos (÷2 per channel — visible on AMOLED)
     const COLOR_DIM_CYAN = 0x007F7F;

@@ -33,6 +33,7 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     function initialize() {
         WatchFace.initialize();
+        if ($ has :MockData) { MockData.seed(); }
     }
 
     function onLayout(dc as Dc) as Void {
@@ -40,7 +41,6 @@ class SugarWaveView extends WatchUi.WatchFace {
     }
 
     function onShow() as Void {
-        if ($ has :MockData) { MockData.seed(); }
         loadCgmData();
     }
 
