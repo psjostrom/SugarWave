@@ -176,9 +176,9 @@ module GraphRenderer {
 
         if (points.size() == 0) { return; }
 
-        // Thin connecting lines (very dim purple)
+        // Thin connecting lines (dim purple, readable outdoors)
         dc.setPenWidth(1);
-        dc.setColor(0x4D0077, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(0x7A00BB, Graphics.COLOR_TRANSPARENT);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
@@ -188,13 +188,13 @@ module GraphRenderer {
             );
         }
 
-        // Small dots (radius 3, half-brightness)
+        // Small dots (radius 3, 75% brightness)
         for (var i = 0; i < points.size(); i++) {
             var pt = points[i] as Dictionary;
             var bg = pt[:bg] as Float;
             var dotColor = Conversions.graphDotColor(bg, bgLow, bgHigh);
-            var halfColor = ((dotColor >> 1) & 0x7F7F7F);
-            dc.setColor(halfColor, Graphics.COLOR_TRANSPARENT);
+            var dimColor = dotColor - ((dotColor >> 2) & 0x3F3F3F);
+            dc.setColor(dimColor, Graphics.COLOR_TRANSPARENT);
             dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 3);
         }
     }

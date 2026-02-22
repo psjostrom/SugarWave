@@ -448,31 +448,65 @@ class SugarWaveView extends WatchUi.WatchFace {
             Graphics.FONT_NUMBER_MEDIUM, timeStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-        // BG + age (half-bright color, no glow)
+        // BG value (full-brightness color — small area, pixel shift protects burn-in)
         if (mReadings != null && mReadings.size() > 0) {
             var latest = mReadings[0] as Dictionary;
-            var bgMmol = Conversions.mgdlToMmol(Conversions.parseFloat(latest["sgv"]));
+            var bgMgdl = Conversions.parseFloat(latest["sgv"]);
+            var bgMmol = Conversions.mgdlToMmol(bgMgdl);
             var bgText = bgMmol.format("%.1f");
+            var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
             var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
             var minutesSince = lastTime > 0 ?
                 ((Time.now().value().toLong() - lastTime / 1000) / 60).toNumber() : -1;
-            var ageText = minutesSince >= 0 ? "  " + minutesSince.toString() + "'" : "";
+            var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
 
-            // Half-brightness for AOD: divide channels by 2
-            var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
-            var halfCol = ((bgCol >> 1) & 0x7F7F7F);
+            // Compute delta from sgv values (same logic as high-power)
+            var deltaMgdl = 0.0f;
+            if (mReadings.size() >= 2) {
+                var prev = mReadings[1] as Dictionary;
+                if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
+                    latest.hasKey("date") && prev.hasKey("date")) {
+                    var t0 = Conversions.parseLong(latest["date"]);
+                    var t1 = Conversions.parseLong(prev["date"]);
+                    var dtMs = t0 - t1;
+                    if (dtMs > 0) {
+                        deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
+                            / (dtMs.toFloat() / 300000.0f);
+                    }
+                }
+            } else if (latest.hasKey("delta")) {
+                deltaMgdl = Conversions.parseFloat(latest["delta"]);
+            }
+            var deltaText = Conversions.formatDelta(Conversions.mgdlToMmol(deltaMgdl));
 
-            dc.setColor(halfCol, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w / 2 + sx, (h * 0.43f).toNumber() + sy,
-                Graphics.FONT_LARGE, bgText + ageText,
+            // BG — full color
+            var bgCy = (h * 0.43f).toNumber() + sy;
+            dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(w / 2 + sx, bgCy,
+                Graphics.FONT_LARGE, bgText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+            // Strikethrough when stale
+            if (minutesSince >= Conversions.STALE_MINUTES) {
+                var bgW = dc.getTextWidthInPixels(bgText, Graphics.FONT_LARGE);
+                dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
+                dc.setPenWidth(3);
+                dc.drawLine(w / 2 - bgW / 2 + sx, bgCy, w / 2 + bgW / 2 + sx, bgCy);
+                dc.setPenWidth(1);
+            }
+
+            // Delta + age below BG — light gray for readability
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(w / 2 + sx, (h * 0.53f).toNumber() + sy,
+                Graphics.FONT_TINY, deltaText + "  " + ageText,
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         // Graph (simplified, dimmed, no perspective grid)
         if (mHistory.size() > 0) {
-            var graphY = (h * 0.55f).toNumber() + sy;
-            var graphH = (h * 0.25f).toNumber();
+            var graphY = (h * 0.59f).toNumber() + sy;
+            var graphH = (h * 0.23f).toNumber();
             var r = w / 2;
             var midY = graphY + graphH / 2 - sy;
             var dy = midY - r;
