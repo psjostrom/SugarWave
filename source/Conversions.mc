@@ -24,7 +24,7 @@ module Conversions {
     const COLOR_NEON_PINK = 0xFF0066;
     const COLOR_NEON_PURPLE = 0x9900FF;
     const COLOR_NEON_ORANGE = 0xFF6600;
-    const COLOR_NEON_RED = 0xFF5555;
+    const COLOR_NEON_RED = 0xFF6666;
     const COLOR_NEON_BLUE = 0x0088FF;
 
     // Light purple for date text — WCAG AAA on black (9.6:1)

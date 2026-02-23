@@ -376,8 +376,8 @@ class SugarWaveView extends WatchUi.WatchFace {
             return 0x00ffff;
         } // Floors: cyan
         if (compType == 2) {
-            return 0xff4488;
-        } // HR: hot pink (5.8:1)
+            return 0xFF66AA;
+        } // HR: hot pink (7.7:1)
         if (compType == 3) {
             return 0xff8844;
         } // Temp: warm orange (6.4:1)
@@ -385,8 +385,8 @@ class SugarWaveView extends WatchUi.WatchFace {
             return 0xffdd00;
         } // Stress: yellow (17.1:1)
         if (compType == 5) {
-            return 0xbb66ff;
-        } // Recovery: bright purple (5.9:1)
+            return 0xCC77FF;
+        } // Recovery: bright purple (7.6:1)
         if (compType == 6) {
             return 0xff8844;
         } // Calories: warm orange
@@ -397,8 +397,8 @@ class SugarWaveView extends WatchUi.WatchFace {
             return 0xffdd00;
         } // Watch Battery: yellow
         if (compType == 9) {
-            return 0xbb66ff;
-        } // Notifications: bright purple
+            return 0xCC77FF;
+        } // Notifications: bright purple (7.6:1)
         return 0xcccccc;
     }
 
@@ -1200,10 +1200,7 @@ class SugarWaveView extends WatchUi.WatchFace {
         // Steps below graph
         var stepsText = getSteps();
         if (!stepsText.equals("--")) {
-            dc.setColor(
-                Conversions.COLOR_NEON_PINK,
-                Graphics.COLOR_TRANSPARENT
-            );
+            dc.setColor(0xCC77FF, Graphics.COLOR_TRANSPARENT);
             dc.drawText(
                 w / 2 + sx,
                 (h * 0.89f).toNumber() + sy,
