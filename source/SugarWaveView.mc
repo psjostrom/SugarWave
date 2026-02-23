@@ -63,6 +63,7 @@ class SugarWaveView extends WatchUi.WatchFace {
     }
 
     function onUpdate(dc as Dc) as Void {
+        loadSettings();
         loadCgmData();
         watchdogBgService();
 
@@ -107,7 +108,7 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     // ── Settings ──
 
-    function loadSettings() as Void {
+    hidden function loadSettings() as Void {
         var low = Application.Properties.getValue("bgLow");
         if (low != null && low instanceof Number) {
             mBgLow = (low as Number).toFloat() / 10.0f;
