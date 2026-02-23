@@ -11,6 +11,12 @@ import Toybox.SensorHistory;
 
 class SugarWaveView extends WatchUi.WatchFace {
 
+    // Detail graph mode (state-driven, no pushView in watch faces)
+    hidden var mDetailMode as Boolean = false;
+    hidden var mDetailStartSec as Long = 0l;
+    const DETAIL_TIMEOUT_SEC = 8;
+    const DETAIL_DURATION_MS = 21600000l; // 6 hours
+
     // Power state
     hidden var mIsHighPower as Boolean = true;
 
@@ -35,6 +41,19 @@ class SugarWaveView extends WatchUi.WatchFace {
         WatchFace.initialize();
     }
 
+    function setDetailMode() as Void {
+        mDetailMode = true;
+        mDetailStartSec = Time.now().value().toLong();
+    }
+
+    function clearDetailMode() as Void {
+        mDetailMode = false;
+    }
+
+    function isDetailMode() as Boolean {
+        return mDetailMode;
+    }
+
     function onLayout(dc as Dc) as Void {
         loadSettings();
     }
@@ -46,6 +65,17 @@ class SugarWaveView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         loadCgmData();
         watchdogBgService();
+
+        // Detail graph mode with auto-revert
+        if (mDetailMode) {
+            var elapsed = Time.now().value().toLong() - mDetailStartSec;
+            if (elapsed >= DETAIL_TIMEOUT_SEC) {
+                mDetailMode = false;
+            } else {
+                drawDetailGraph(dc);
+                return;
+            }
+        }
 
         if (mIsHighPower || !mLowPowerEnabled) {
             drawHighPower(dc);
@@ -72,6 +102,7 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     function onEnterSleep() as Void {
         mIsHighPower = false;
+        mDetailMode = false;
     }
 
     // ── Settings ──
@@ -315,6 +346,305 @@ class SugarWaveView extends WatchUi.WatchFace {
         var graphW = w - 2 * padX;
         GraphRenderer.draw(dc, padX, graphY, graphW, graphH,
             mHistory, mGraphDuration, mBgLow, mBgHigh);
+    }
+
+    // ── Detail Graph (full-screen, triggered by tap on graph zone) ──
+
+    hidden function drawDetailGraph(dc as Dc) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var r = w / 2;
+        var rSq = r * r;
+
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+
+        // ── Header: BG + delta + age + prediction ──
+        var headerY = (h * 0.12f).toNumber();
+        drawDetailHeader(dc, w, h, headerY);
+
+        // ── Graph area — below header, above X-axis labels ──
+        var graphY = (h * 0.26f).toNumber();
+        var graphBottom = (h * 0.84f).toNumber();
+        var graphH = graphBottom - graphY;
+
+        // Chord widths at top and bottom edges of graph
+        var dyTop = graphY - r;
+        var chordTop = 2.0f * Math.sqrt((rSq - dyTop * dyTop).toFloat());
+        var dyBot = graphBottom - r;
+        var chordBot = 2.0f * Math.sqrt((rSq - dyBot * dyBot).toFloat());
+        var minChord = (chordTop < chordBot) ? chordTop : chordBot;
+
+        // Reserve left space for Y-axis labels
+        var totalW = (minChord * 0.92f).toNumber();
+        var labelReserve = 32;
+        var graphW = totalW - labelReserve;
+        var graphX = (w - totalW) / 2 + labelReserve;
+
+        // Retrowave grid background
+        NeonRenderer.drawPerspectiveGrid(dc, graphX, graphY, graphW, graphH, Conversions.COLOR_GRID);
+
+        // Y-axis scaling — dynamic, expands to fit data
+        var yMin = mBgLow - 0.5f;
+        var yMax = mBgHigh + 0.5f;
+        for (var i = 0; i < mHistory.size(); i++) {
+            var bg = (mHistory[i] as Dictionary)[:bg] as Float;
+            if (bg > 0.0f) {
+                if (bg < yMin) { yMin = bg - 0.5f; }
+                if (bg > yMax) { yMax = bg + 0.5f; }
+            }
+        }
+        yMin = (yMin.toNumber()).toFloat();
+        if (yMin < Conversions.GRAPH_Y_MIN) { yMin = Conversions.GRAPH_Y_MIN; }
+        yMax = (yMax.toNumber() + 1).toFloat();
+        if (yMax > Conversions.GRAPH_Y_MAX) { yMax = Conversions.GRAPH_Y_MAX; }
+        var yRange = yMax - yMin;
+
+        // Low zone fill
+        var lowLineY = GraphRenderer.mmolToPixelY(mBgLow, graphY, graphH, yMin, yRange);
+        dc.setColor(Conversions.COLOR_GRAPH_LOW_ZONE, Graphics.COLOR_TRANSPARENT);
+        dc.fillRectangle(graphX, lowLineY, graphW, graphY + graphH - lowLineY);
+
+        // Reference lines
+        dc.setPenWidth(1);
+        dc.setColor(Conversions.COLOR_LOW, Graphics.COLOR_TRANSPARENT);
+        GraphRenderer.drawDashedLine(dc, graphX, lowLineY, graphX + graphW, lowLineY, 8, 4);
+
+        var highLineY = GraphRenderer.mmolToPixelY(mBgHigh, graphY, graphH, yMin, yRange);
+        dc.setColor(Conversions.COLOR_GRAPH_HIGH_LINE, Graphics.COLOR_TRANSPARENT);
+        GraphRenderer.drawDashedLine(dc, graphX, highLineY, graphX + graphW, highLineY, 8, 4);
+
+        // Y-axis labels — adaptive step: 1 if range ≤ 8, 2 otherwise
+        var labelFont = Graphics.FONT_XTINY;
+        var labelX = graphX - 3;
+        var yStep = (yRange > 8.0f) ? 2.0f : 1.0f;
+        var mmolVal = ((yMin / yStep).toNumber() + 1).toFloat() * yStep;
+        while (mmolVal < yMax) {
+            var ly = GraphRenderer.mmolToPixelY(mmolVal, graphY, graphH, yMin, yRange);
+            var ldx = (labelX - 28) - r;
+            var ldy = ly - r;
+            if ((ldx * ldx + ldy * ldy) < rSq) {
+                dc.setColor(Conversions.COLOR_NEON_PURPLE, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(labelX, ly, labelFont, mmolVal.format("%.0f"),
+                    Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            mmolVal += yStep;
+        }
+
+        // Time setup
+        var newestTime = Time.now().value().toLong() * 1000l;
+        var oldestTime = newestTime - DETAIL_DURATION_MS;
+
+        // X-axis time labels — tighter radius to prevent edge overflow
+        var nowInfo = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        var currentHour = nowInfo.hour as Number;
+        var minMs = (nowInfo.min as Number).toLong() * 60000l;
+        var secMs = (nowInfo.sec as Number).toLong() * 1000l;
+        var xLabelY = graphBottom + 8;
+        var rInset = r - 24;
+        var rInsetSq = rInset * rInset;
+
+        for (var hOffset = -6; hOffset <= 0; hOffset++) {
+            var labelHour = currentHour + hOffset;
+            while (labelHour < 0) { labelHour += 24; }
+            labelHour = labelHour % 24;
+
+            var hourTimeMs = newestTime + hOffset.toLong() * 3600000l - minMs - secMs;
+            if (hourTimeMs < oldestTime || hourTimeMs > newestTime) { continue; }
+
+            var lx = GraphRenderer.timeToPixelX(hourTimeMs, graphX, graphW, newestTime, DETAIL_DURATION_MS);
+            var xdx = lx - r;
+            var xdy = xLabelY - r;
+            if ((xdx * xdx + xdy * xdy) < rInsetSq) {
+                dc.setColor(Conversions.COLOR_NEON_PURPLE, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(lx, xLabelY, labelFont, labelHour.format("%02d"),
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+        }
+
+        // Plot data points
+        if (mHistory.size() == 0) { return; }
+
+        var points = [] as Array;
+        for (var i = mHistory.size() - 1; i >= 0; i--) {
+            var entry = mHistory[i] as Dictionary;
+            var t = entry[:time] as Long;
+            if (t < oldestTime) { continue; }
+            var bg = entry[:bg] as Float;
+            var px = GraphRenderer.timeToPixelX(t, graphX, graphW, newestTime, DETAIL_DURATION_MS);
+            var py = GraphRenderer.mmolToPixelY(bg, graphY, graphH, yMin, yRange);
+            points.add({:px => px, :py => py, :bg => bg});
+        }
+
+        if (points.size() == 0) { return; }
+
+        // Neon glow connecting lines
+        dc.setAntiAlias(true);
+        var lr = 0xFF;
+        var lg = 0x00;
+        var lb = 0x66;
+
+        dc.setStroke(Graphics.createColor(25, lr, lg, lb));
+        dc.setPenWidth(5);
+        for (var i = 1; i < points.size(); i++) {
+            var prev = points[i - 1] as Dictionary;
+            var curr = points[i] as Dictionary;
+            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
+                curr[:px] as Number, curr[:py] as Number);
+        }
+        dc.setStroke(Graphics.createColor(60, lr, lg, lb));
+        dc.setPenWidth(3);
+        for (var i = 1; i < points.size(); i++) {
+            var prev = points[i - 1] as Dictionary;
+            var curr = points[i] as Dictionary;
+            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
+                curr[:px] as Number, curr[:py] as Number);
+        }
+        dc.setStroke(Graphics.createColor(255, lr, lg, lb));
+        dc.setPenWidth(1);
+        for (var i = 1; i < points.size(); i++) {
+            var prev = points[i - 1] as Dictionary;
+            var curr = points[i] as Dictionary;
+            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
+                curr[:px] as Number, curr[:py] as Number);
+        }
+        dc.setPenWidth(1);
+
+        // Neon dots with glow halos
+        for (var i = 0; i < points.size(); i++) {
+            var pt = points[i] as Dictionary;
+            var bg = pt[:bg] as Float;
+            var dotColor = Conversions.graphDotColor(bg, mBgLow, mBgHigh);
+            var dr = (dotColor >> 16) & 0xFF;
+            var dg = (dotColor >> 8) & 0xFF;
+            var db = dotColor & 0xFF;
+            dc.setFill(Graphics.createColor(25, dr, dg, db));
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 5);
+            dc.setFill(Graphics.createColor(80, dr, dg, db));
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 3);
+            dc.setFill(Graphics.createColor(255, dr, dg, db));
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 2);
+        }
+        dc.setAntiAlias(false);
+    }
+
+    // ── Detail header: BG + delta + age (row 1) + prediction (row 2) ──
+    hidden function drawDetailHeader(dc as Dc, w as Number, h as Number, cy as Number) as Void {
+        if (mReadings == null || mReadings.size() == 0) { return; }
+
+        var latest = mReadings[0] as Dictionary;
+        var bgMgdl = Conversions.parseFloat(latest["sgv"]);
+        var bgMmol = Conversions.mgdlToMmol(bgMgdl);
+        var bgText = bgMmol.format("%.1f");
+        var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
+
+        var deltaMgdl = 0.0f;
+        if (mReadings.size() >= 2) {
+            var prev = mReadings[1] as Dictionary;
+            if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
+                latest.hasKey("date") && prev.hasKey("date")) {
+                var t0 = Conversions.parseLong(latest["date"]);
+                var t1 = Conversions.parseLong(prev["date"]);
+                var dtMs = t0 - t1;
+                if (dtMs > 0) {
+                    deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
+                        / (dtMs.toFloat() / 300000.0f);
+                }
+            }
+        }
+        var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
+        var deltaText = Conversions.formatDelta(deltaMmol);
+        var direction = Conversions.directionFromDelta(deltaMgdl);
+
+        var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
+        var minutesSince = lastTime > 0 ?
+            ((Time.now().value().toLong() - lastTime / 1000) / 60).toNumber() : -1;
+        var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
+
+        // Chord-aware layout
+        var r = w / 2;
+        var dyH = cy - r;
+        var chord = 2.0f * Math.sqrt((r * r - dyH * dyH).toFloat());
+        var maxW = (chord * 0.88f).toNumber();
+
+        // Row 1: [arrow] [BG] [delta] [age]
+        var arrowSize = 16;
+        var gap = 10;
+        var smallFont = Graphics.FONT_SMALL;
+        var tinyFont = Graphics.FONT_TINY;
+        var bgW = dc.getTextWidthInPixels(bgText, smallFont);
+        var deltaW = dc.getTextWidthInPixels(deltaText, tinyFont);
+        var ageW = dc.getTextWidthInPixels(ageText, tinyFont);
+        var totalW = arrowSize + gap + bgW + gap + deltaW + gap + ageW;
+
+        // Shrink gaps if too wide for chord
+        if (totalW > maxW) {
+            gap = (maxW - arrowSize - bgW - deltaW - ageW) / 3;
+            if (gap < 2) { gap = 2; }
+            totalW = arrowSize + gap + bgW + gap + deltaW + gap + ageW;
+        }
+
+        var x = (w - totalW) / 2;
+
+        ArrowRenderer.draw(dc, x + arrowSize / 2, cy, arrowSize, direction, bgCol);
+        x += arrowSize + gap;
+
+        dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, cy, smallFont, bgText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        x += bgW + gap;
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, cy, tinyFont, deltaText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        x += deltaW + gap;
+
+        dc.setColor(Conversions.staleColor(minutesSince), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, cy, tinyFont, ageText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // Row 2: Time-to-threshold prediction (if ≤30 min)
+        // deltaMmol is per 5 min, so per-minute rate = deltaMmol / 5
+        var deltaMmolPerMin = deltaMmol / 5.0f;
+        var predText = null as String?;
+        var predColor = 0;
+
+        if (deltaMmolPerMin < -0.01f) {
+            if (bgMmol > mBgHigh) {
+                var minTo = ((bgMmol - mBgHigh) / (-deltaMmolPerMin)).toNumber();
+                if (minTo > 0 && minTo <= 30) {
+                    predText = mBgHigh.format("%.1f") + " in " + minTo.toString() + "'";
+                    predColor = Conversions.COLOR_HIGH;
+                }
+            } else if (bgMmol > mBgLow) {
+                var minTo = ((bgMmol - mBgLow) / (-deltaMmolPerMin)).toNumber();
+                if (minTo > 0 && minTo <= 30) {
+                    predText = mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
+                    predColor = Conversions.COLOR_LOW;
+                }
+            }
+        } else if (deltaMmolPerMin > 0.01f) {
+            if (bgMmol < mBgLow) {
+                var minTo = ((mBgLow - bgMmol) / deltaMmolPerMin).toNumber();
+                if (minTo > 0 && minTo <= 30) {
+                    predText = mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
+                    predColor = Conversions.COLOR_LOW;
+                }
+            } else if (bgMmol < mBgHigh) {
+                var minTo = ((mBgHigh - bgMmol) / deltaMmolPerMin).toNumber();
+                if (minTo > 0 && minTo <= 30) {
+                    predText = mBgHigh.format("%.1f") + " in " + minTo.toString() + "'";
+                    predColor = Conversions.COLOR_HIGH;
+                }
+            }
+        }
+
+        if (predText != null) {
+            var predY = (h * 0.22f).toNumber();
+            dc.setColor(predColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, predY, tinyFont, predText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
     }
 
     // ── Zone 4: CGM Data (now below graph) ──

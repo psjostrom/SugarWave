@@ -21,7 +21,8 @@ class SugarWaveApp extends Application.AppBase {
 
     function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
         scheduleNextPoll(0l);
-        return [new SugarWaveView(), new SugarWaveDelegate()];
+        var view = new SugarWaveView();
+        return [view, new SugarWaveDelegate(view)];
     }
 
     function getServiceDelegate() as [System.ServiceDelegate] {

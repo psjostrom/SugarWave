@@ -5,6 +5,7 @@
     <property id="comp1" type="number">0</property>
     <property id="comp2" type="number">7</property>
     <property id="comp3" type="number">8</property>
-    <property id="comp4" type="number">3</property>
+    <property id="comp4" type="number">8</property>
+    <property id="comp4Press" type="number">10</property>
     <property id="lowPowerMode" type="number">0</property>
 </properties>

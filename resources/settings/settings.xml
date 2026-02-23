@@ -82,6 +82,21 @@
             <listEntry value="9">Notifications</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.comp4Press" title="@Strings.comp4PressTitle">
+        <settingConfig type="list">
+            <listEntry value="0">Steps</listEntry>
+            <listEntry value="1">Floors</listEntry>
+            <listEntry value="2">Heart Rate</listEntry>
+            <listEntry value="3">Temperature</listEntry>
+            <listEntry value="4">Stress</listEntry>
+            <listEntry value="5">Recovery Time</listEntry>
+            <listEntry value="6">Calories</listEntry>
+            <listEntry value="7">Body Battery</listEntry>
+            <listEntry value="8">Watch Battery</listEntry>
+            <listEntry value="9">Notifications</listEntry>
+            <listEntry value="10">Calendar</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.lowPowerMode" title="@Strings.lowPowerModeTitle">
         <settingConfig type="list">
             <listEntry value="0">Enabled</listEntry>

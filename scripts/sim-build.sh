@@ -30,23 +30,29 @@ import Toybox.Time;
 
 module MockData {
     function seed() as Void {
-        var existing = Application.Storage.getValue("cgmReadings");
-        if (existing != null) { return; }
+        // Always re-seed so timestamps stay fresh
+        var nowMs = Time.now().value().toLong() * 1000l;
 
-        var sgvs = [252, 270, 280, 275, 260, 245, 230, 220, 210, 200,
-                    195, 190, 185, 180, 175, 170, 165, 160, 155, 150,
-                    145, 140, 138, 135];
-        var nowMs = Time.now().value().toLong() * 1000l - 600000l;
+        // 72 readings (~6h) — realistic curve: stable → rise → high → falling back
         var readings = [] as Array;
-        for (var i = 0; i < sgvs.size(); i++) {
+        for (var i = 0; i < 72; i++) {
+            // Work backwards: i=0 is newest
+            var t = i;
+            var sgv = 120;
+            if (t < 8) { sgv = 252 + t * 36; }             // falling fast: newest=252(14.0) was higher
+            else if (t < 20) { sgv = 227 - (t - 8) * 6; }  // was falling from peak
+            else if (t < 35) { sgv = 155 + (t - 20) * 3; }  // gentle rise
+            else if (t < 50) { sgv = 200 - (t - 35) * 4; }  // descent
+            else if (t < 62) { sgv = 140 + (t - 50) * 5; }  // earlier rise
+            else { sgv = 140 - (t - 62) * 2; }              // stable start
+
+            if (sgv < 72) { sgv = 72; }
+            if (sgv > 270) { sgv = 270; }
+
             var entry = {
                 "date" => nowMs - (i.toLong() * 300000l),
-                "sgv" => sgvs[i]
+                "sgv" => sgv
             } as Dictionary;
-            if (i == 0) {
-                entry["delta"] = -36;
-                entry["direction"] = "DoubleDown";
-            }
             readings.add(entry);
         }
         Application.Storage.setValue("cgmReadings", readings);
