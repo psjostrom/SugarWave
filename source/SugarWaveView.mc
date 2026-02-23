@@ -92,7 +92,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             if (!System.getDeviceSettings().phoneConnected) { return; }
             var lastTime = Background.getLastTemporalEventTime();
             if (lastTime == null || lastTime.value() < Time.now().value() - 600) {
-                Background.registerForTemporalEvent(Time.now().add(new Time.Duration(300)));
+                Background.registerForTemporalEvent(Time.now());
             }
         } catch (ex) {}
     }
