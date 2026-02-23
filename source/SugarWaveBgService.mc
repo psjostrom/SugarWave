@@ -12,9 +12,12 @@ class SugarWaveBgService extends System.ServiceDelegate {
 
     function onTemporalEvent() {
         Communications.makeWebRequest(
-            "http://127.0.0.1:17580/sgv.json?count=36",
-            null,
+            "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=36",
+            {},
             {
+                :headers => {
+                    "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED,
+                },
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceive)
@@ -22,27 +25,34 @@ class SugarWaveBgService extends System.ServiceDelegate {
     }
 
     function onReceive(responseCode as Number, data as Dictionary or String or Null) as Void {
-        if (responseCode == 200 && data != null) {
+        if (responseCode == 200 && data != null &&
+            data instanceof Lang.Array && (data as Array).size() > 0) {
             var readings = data as Array;
-            var result = [] as Array;
+            // Normalize in-place to minimize memory
             for (var i = 0; i < readings.size(); i++) {
-                var r = readings[i] as Dictionary;
-                if (r["date"] == null || r["sgv"] == null) { continue; }
-                var dateVal = r["date"];
+                var r = readings[i];
+                if (!(r instanceof Dictionary)) { continue; }
+                var d = r as Dictionary;
+                if (d["date"] == null || d["sgv"] == null) { continue; }
+                var dateVal = d["date"];
                 var dateLong = (dateVal instanceof Long) ? dateVal as Long :
                     (dateVal instanceof Number) ? (dateVal as Number).toLong() :
                     (dateVal instanceof Double) ? (dateVal as Double).toLong() : 0l;
-                var entry = {
-                    "date" => dateLong,
-                    "sgv" => r["sgv"]
-                } as Dictionary;
                 if (i == 0) {
-                    if (r["delta"] != null) { entry["delta"] = r["delta"]; }
-                    if (r["direction"] != null) { entry["direction"] = r["direction"]; }
+                    readings[i] = {
+                        "date" => dateLong,
+                        "sgv" => d["sgv"],
+                        "delta" => d["delta"],
+                        "direction" => d["direction"]
+                    };
+                } else {
+                    readings[i] = {
+                        "date" => dateLong,
+                        "sgv" => d["sgv"]
+                    };
                 }
-                result.add(entry);
             }
-            Background.exit(result);
+            Background.exit(readings);
         } else {
             Background.exit(responseCode);
         }
