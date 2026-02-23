@@ -12,7 +12,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
 
     function onTemporalEvent() {
         Communications.makeWebRequest(
-            "http://127.0.0.1:17580/sgv.json?count=36",
+            "http://127.0.0.1:17580/sgv.json?count=72",
             null,
             {
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
