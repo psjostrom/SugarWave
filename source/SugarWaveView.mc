@@ -91,7 +91,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             if (!System.getDeviceSettings().phoneConnected) { return; }
             var lastTime = Background.getLastTemporalEventTime();
             if (lastTime == null || lastTime.value() < Time.now().value() - 600) {
-                Background.registerForTemporalEvent(Time.now());
+                Background.registerForTemporalEvent(Time.now().add(new Time.Duration(300)));
             }
         } catch (ex) {}
     }
@@ -107,7 +107,7 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     // ── Settings ──
 
-    hidden function loadSettings() as Void {
+    function loadSettings() as Void {
         var low = Application.Properties.getValue("bgLow");
         if (low != null && low instanceof Number) {
             mBgLow = (low as Number).toFloat() / 10.0f;

@@ -8,6 +8,8 @@ import Toybox.WatchUi;
 (:background)
 class SugarWaveApp extends Application.AppBase {
 
+    hidden var mView as SugarWaveView?;
+
     function initialize() {
         AppBase.initialize();
     }
@@ -21,8 +23,8 @@ class SugarWaveApp extends Application.AppBase {
 
     function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
         scheduleNextPoll(0l);
-        var view = new SugarWaveView();
-        return [view, new SugarWaveDelegate(view)];
+        mView = new SugarWaveView();
+        return [mView, new SugarWaveDelegate(mView)];
     }
 
     function getServiceDelegate() as [System.ServiceDelegate] {
@@ -44,6 +46,9 @@ class SugarWaveApp extends Application.AppBase {
     }
 
     function onSettingsChanged() as Void {
+        if (mView != null) {
+            mView.loadSettings();
+        }
         WatchUi.requestUpdate();
     }
 
