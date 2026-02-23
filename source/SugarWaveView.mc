@@ -10,7 +10,6 @@ import Toybox.ActivityMonitor;
 import Toybox.SensorHistory;
 
 class SugarWaveView extends WatchUi.WatchFace {
-
     // Detail graph mode (state-driven, no pushView in watch faces)
     hidden var mDetailMode as Boolean = false;
     hidden var mDetailStartSec as Long = 0l;
@@ -35,7 +34,6 @@ class SugarWaveView extends WatchUi.WatchFace {
     hidden var mGraphDuration as Number = 60;
     hidden var mComps as Array = [0, 7, 8, 3];
     hidden var mLowPowerEnabled as Boolean = true;
-
 
     function initialize() {
         WatchFace.initialize();
@@ -88,10 +86,17 @@ class SugarWaveView extends WatchUi.WatchFace {
     // Re-register background service if it hasn't fired in 10+ minutes
     hidden function watchdogBgService() as Void {
         try {
-            if (!(Toybox.System has :ServiceDelegate)) { return; }
-            if (!System.getDeviceSettings().phoneConnected) { return; }
+            if (!(Toybox.System has :ServiceDelegate)) {
+                return;
+            }
+            if (!System.getDeviceSettings().phoneConnected) {
+                return;
+            }
             var lastTime = Background.getLastTemporalEventTime();
-            if (lastTime == null || lastTime.value() < Time.now().value() - 600) {
+            if (
+                lastTime == null ||
+                lastTime.value() < Time.now().value() - 600
+            ) {
                 Background.registerForTemporalEvent(Time.now());
             }
         } catch (ex) {}
@@ -122,7 +127,9 @@ class SugarWaveView extends WatchUi.WatchFace {
             mGraphDuration = dur as Number;
         }
         for (var i = 0; i < 4; i++) {
-            var val = Application.Properties.getValue("comp" + (i + 1).toString());
+            var val = Application.Properties.getValue(
+                "comp" + (i + 1).toString()
+            );
             if (val != null && val instanceof Number) {
                 mComps[i] = val as Number;
             }
@@ -148,19 +155,21 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     hidden function buildHistory() as Void {
         mHistory = [];
-        if (mReadings == null) { return; }
+        if (mReadings == null) {
+            return;
+        }
         for (var i = 0; i < mReadings.size(); i++) {
             var r = mReadings[i] as Dictionary;
             var sgv = r.hasKey("sgv") ? r["sgv"] : null;
             var date = r.hasKey("date") ? r["date"] : null;
-            if (sgv == null || date == null) { continue; }
+            if (sgv == null || date == null) {
+                continue;
+            }
             var bg = Conversions.mgdlToMmol(Conversions.parseFloat(sgv));
             var time = Conversions.parseLong(date);
-            mHistory.add({:bg => bg, :time => time});
+            mHistory.add({ :bg => bg, :time => time });
         }
     }
-
-
 
     // ── High-Power Rendering ──
     // Layout (top to bottom):
@@ -184,35 +193,59 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     // ── Zone 1: Time + Date (stacked tight) ──
 
-    hidden function drawTimeAndDate(dc as Dc, w as Number, h as Number) as Void {
+    hidden function drawTimeAndDate(
+        dc as Dc,
+        w as Number,
+        h as Number
+    ) as Void {
         var clockTime = System.getClockTime();
         var hours = clockTime.hour;
         if (!System.getDeviceSettings().is24Hour) {
-            if (hours == 0) { hours = 12; }
-            else if (hours > 12) { hours = hours - 12; }
+            if (hours == 0) {
+                hours = 12;
+            } else if (hours > 12) {
+                hours = hours - 12;
+            }
         }
         var timeStr = hours.toString() + ":" + clockTime.min.format("%02d");
 
         var cx = w / 2;
         var timeCy = (h * 0.20f).toNumber();
 
-        NeonRenderer.drawGlowText(dc, cx, timeCy, Graphics.FONT_NUMBER_MEDIUM, timeStr,
+        NeonRenderer.drawGlowText(
+            dc,
+            cx,
+            timeCy,
+            Graphics.FONT_NUMBER_MEDIUM,
+            timeStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER,
-            Conversions.COLOR_NEON_CYAN, Conversions.COLOR_DIM_CYAN);
+            Conversions.COLOR_NEON_CYAN,
+            Conversions.COLOR_DIM_CYAN
+        );
 
         // Date above time
         var info = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
-        var dateStr = info.day_of_week.substring(0, 3) + " " + info.day.format("%d");
+        var dateStr =
+            info.day_of_week.substring(0, 3) + " " + info.day.format("%d");
         dc.setColor(Conversions.COLOR_DATE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, (h * 0.06f).toNumber(), Graphics.FONT_XTINY, dateStr,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(
+            cx,
+            (h * 0.06f).toNumber(),
+            Graphics.FONT_XTINY,
+            dateStr,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+        );
     }
 
     // ── Zone 2: Complications ──
     // Each complication has a vector icon + colored value.
     // Per-type colors for instant visual distinction.
 
-    hidden function drawComplications(dc as Dc, w as Number, h as Number) as Void {
+    hidden function drawComplications(
+        dc as Dc,
+        w as Number,
+        h as Number
+    ) as Void {
         var cy = (h * 0.38f).toNumber();
         var numComps = mComps.size();
 
@@ -236,20 +269,33 @@ class SugarWaveView extends WatchUi.WatchFace {
 
             // Truncate long values to fit slot
             var maxW = spacing - 6;
-            while (dc.getTextWidthInPixels(value, Graphics.FONT_TINY) > maxW && value.length() > 2) {
+            while (
+                dc.getTextWidthInPixels(value, Graphics.FONT_TINY) > maxW &&
+                value.length() > 2
+            ) {
                 value = value.substring(0, value.length() - 1);
             }
 
             // Value below icon
             dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(x, cy + 14, Graphics.FONT_TINY, value,
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(
+                x,
+                cy + 14,
+                Graphics.FONT_TINY,
+                value,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            );
         }
     }
 
     // Draw a small vector icon for each complication type
-    hidden function drawCompIcon(dc as Dc, cx as Number, cy as Number,
-                                  compType as Number, color as Number) as Void {
+    hidden function drawCompIcon(
+        dc as Dc,
+        cx as Number,
+        cy as Number,
+        compType as Number,
+        color as Number
+    ) as Void {
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         var s = 6; // icon half-size
 
@@ -266,7 +312,11 @@ class SugarWaveView extends WatchUi.WatchFace {
             // HR: heart shape
             dc.fillCircle(cx - 3, cy - 2, 3);
             dc.fillCircle(cx + 3, cy - 2, 3);
-            dc.fillPolygon([[cx - 6, cy], [cx, cy + 6], [cx + 6, cy]]);
+            dc.fillPolygon([
+                [cx - 6, cy],
+                [cx, cy + 6],
+                [cx + 6, cy],
+            ]);
         } else if (compType == 3) {
             // Temperature: thermometer — vertical bar with circle at bottom
             dc.fillRectangle(cx - 2, cy - s, 4, s + 2);
@@ -287,16 +337,22 @@ class SugarWaveView extends WatchUi.WatchFace {
         } else if (compType == 6) {
             // Calories: flame
             dc.fillPolygon([
-                [cx, cy - s], [cx + 4, cy + 2],
-                [cx + 2, cy + s], [cx, cy + 3],
-                [cx - 2, cy + s], [cx - 4, cy + 2]
+                [cx, cy - s],
+                [cx + 4, cy + 2],
+                [cx + 2, cy + s],
+                [cx, cy + 3],
+                [cx - 2, cy + s],
+                [cx - 4, cy + 2],
             ]);
         } else if (compType == 7) {
             // Body Battery: lightning bolt
             dc.fillPolygon([
-                [cx + 1, cy - s], [cx - 3, cy + 1],
-                [cx, cy + 1], [cx - 1, cy + s],
-                [cx + 3, cy - 1], [cx, cy - 1]
+                [cx + 1, cy - s],
+                [cx - 3, cy + 1],
+                [cx, cy + 1],
+                [cx - 1, cy + s],
+                [cx + 3, cy - 1],
+                [cx, cy - 1],
             ]);
         } else if (compType == 8) {
             // Watch Battery: battery outline with fill
@@ -313,17 +369,37 @@ class SugarWaveView extends WatchUi.WatchFace {
 
     // Per-type complication colors — all WCAG AA+ on black (≥4.5:1)
     hidden function getCompColor(compType as Number) as Number {
-        if (compType == 0) { return 0x00FFFF; }  // Steps: cyan (16.7:1)
-        if (compType == 1) { return 0x00FFFF; }  // Floors: cyan
-        if (compType == 2) { return 0xFF4488; }  // HR: hot pink (5.8:1)
-        if (compType == 3) { return 0xFF8844; }  // Temp: warm orange (6.4:1)
-        if (compType == 4) { return 0xFFDD00; }  // Stress: yellow (17.1:1)
-        if (compType == 5) { return 0xBB66FF; }  // Recovery: bright purple (5.9:1)
-        if (compType == 6) { return 0xFF8844; }  // Calories: warm orange
-        if (compType == 7) { return 0x55FF55; }  // Body Battery: green (12.2:1)
-        if (compType == 8) { return 0xFFDD00; }  // Watch Battery: yellow
-        if (compType == 9) { return 0xBB66FF; }  // Notifications: bright purple
-        return 0xCCCCCC;
+        if (compType == 0) {
+            return 0x00ffff;
+        } // Steps: cyan (16.7:1)
+        if (compType == 1) {
+            return 0x00ffff;
+        } // Floors: cyan
+        if (compType == 2) {
+            return 0xff4488;
+        } // HR: hot pink (5.8:1)
+        if (compType == 3) {
+            return 0xff8844;
+        } // Temp: warm orange (6.4:1)
+        if (compType == 4) {
+            return 0xffdd00;
+        } // Stress: yellow (17.1:1)
+        if (compType == 5) {
+            return 0xbb66ff;
+        } // Recovery: bright purple (5.9:1)
+        if (compType == 6) {
+            return 0xff8844;
+        } // Calories: warm orange
+        if (compType == 7) {
+            return 0x55ff55;
+        } // Body Battery: green (12.2:1)
+        if (compType == 8) {
+            return 0xffdd00;
+        } // Watch Battery: yellow
+        if (compType == 9) {
+            return 0xbb66ff;
+        } // Notifications: bright purple
+        return 0xcccccc;
     }
 
     // ── Zone 3: Graph (now in middle, before CGM data) ──
@@ -345,8 +421,17 @@ class SugarWaveView extends WatchUi.WatchFace {
         NeonRenderer.drawSun(dc, w / 2, graphY + sunRadius / 3, sunRadius);
 
         var graphW = w - 2 * padX;
-        GraphRenderer.draw(dc, padX, graphY, graphW, graphH,
-            mHistory, mGraphDuration, mBgLow, mBgHigh);
+        GraphRenderer.draw(
+            dc,
+            padX,
+            graphY,
+            graphW,
+            graphH,
+            mHistory,
+            mGraphDuration,
+            mBgLow,
+            mBgHigh
+        );
     }
 
     // ── Detail Graph (full-screen, triggered by tap on graph zone) ──
@@ -374,7 +459,7 @@ class SugarWaveView extends WatchUi.WatchFace {
         var chordTop = 2.0f * Math.sqrt((rSq - dyTop * dyTop).toFloat());
         var dyBot = graphBottom - r;
         var chordBot = 2.0f * Math.sqrt((rSq - dyBot * dyBot).toFloat());
-        var minChord = (chordTop < chordBot) ? chordTop : chordBot;
+        var minChord = chordTop < chordBot ? chordTop : chordBot;
 
         // Reserve left space for Y-axis labels
         var totalW = (minChord * 0.92f).toNumber();
@@ -383,7 +468,14 @@ class SugarWaveView extends WatchUi.WatchFace {
         var graphX = (w - totalW) / 2 + labelReserve;
 
         // Retrowave grid background
-        NeonRenderer.drawPerspectiveGrid(dc, graphX, graphY, graphW, graphH, Conversions.COLOR_GRID);
+        NeonRenderer.drawPerspectiveGrid(
+            dc,
+            graphX,
+            graphY,
+            graphW,
+            graphH,
+            Conversions.COLOR_GRID
+        );
 
         // Y-axis scaling — dynamic, expands to fit data
         var yMin = mBgLow - 0.5f;
@@ -391,43 +483,99 @@ class SugarWaveView extends WatchUi.WatchFace {
         for (var i = 0; i < mHistory.size(); i++) {
             var bg = (mHistory[i] as Dictionary)[:bg] as Float;
             if (bg > 0.0f) {
-                if (bg < yMin) { yMin = bg - 0.5f; }
-                if (bg > yMax) { yMax = bg + 0.5f; }
+                if (bg < yMin) {
+                    yMin = bg - 0.5f;
+                }
+                if (bg > yMax) {
+                    yMax = bg + 0.5f;
+                }
             }
         }
-        yMin = (yMin.toNumber()).toFloat();
-        if (yMin < Conversions.GRAPH_Y_MIN) { yMin = Conversions.GRAPH_Y_MIN; }
+        yMin = yMin.toNumber().toFloat();
+        if (yMin < Conversions.GRAPH_Y_MIN) {
+            yMin = Conversions.GRAPH_Y_MIN;
+        }
         yMax = (yMax.toNumber() + 1).toFloat();
-        if (yMax > Conversions.GRAPH_Y_MAX) { yMax = Conversions.GRAPH_Y_MAX; }
+        if (yMax > Conversions.GRAPH_Y_MAX) {
+            yMax = Conversions.GRAPH_Y_MAX;
+        }
         var yRange = yMax - yMin;
 
         // Low zone fill
-        var lowLineY = GraphRenderer.mmolToPixelY(mBgLow, graphY, graphH, yMin, yRange);
-        dc.setColor(Conversions.COLOR_GRAPH_LOW_ZONE, Graphics.COLOR_TRANSPARENT);
+        var lowLineY = GraphRenderer.mmolToPixelY(
+            mBgLow,
+            graphY,
+            graphH,
+            yMin,
+            yRange
+        );
+        dc.setColor(
+            Conversions.COLOR_GRAPH_LOW_ZONE,
+            Graphics.COLOR_TRANSPARENT
+        );
         dc.fillRectangle(graphX, lowLineY, graphW, graphY + graphH - lowLineY);
 
         // Reference lines
         dc.setPenWidth(1);
         dc.setColor(Conversions.COLOR_LOW, Graphics.COLOR_TRANSPARENT);
-        GraphRenderer.drawDashedLine(dc, graphX, lowLineY, graphX + graphW, lowLineY, 8, 4);
+        GraphRenderer.drawDashedLine(
+            dc,
+            graphX,
+            lowLineY,
+            graphX + graphW,
+            lowLineY,
+            8,
+            4
+        );
 
-        var highLineY = GraphRenderer.mmolToPixelY(mBgHigh, graphY, graphH, yMin, yRange);
-        dc.setColor(Conversions.COLOR_GRAPH_HIGH_LINE, Graphics.COLOR_TRANSPARENT);
-        GraphRenderer.drawDashedLine(dc, graphX, highLineY, graphX + graphW, highLineY, 8, 4);
+        var highLineY = GraphRenderer.mmolToPixelY(
+            mBgHigh,
+            graphY,
+            graphH,
+            yMin,
+            yRange
+        );
+        dc.setColor(
+            Conversions.COLOR_GRAPH_HIGH_LINE,
+            Graphics.COLOR_TRANSPARENT
+        );
+        GraphRenderer.drawDashedLine(
+            dc,
+            graphX,
+            highLineY,
+            graphX + graphW,
+            highLineY,
+            8,
+            4
+        );
 
         // Y-axis labels — adaptive step: 1 if range ≤ 8, 2 otherwise
         var labelFont = Graphics.FONT_XTINY;
         var labelX = graphX - 3;
-        var yStep = (yRange > 8.0f) ? 2.0f : 1.0f;
+        var yStep = yRange > 8.0f ? 2.0f : 1.0f;
         var mmolVal = ((yMin / yStep).toNumber() + 1).toFloat() * yStep;
         while (mmolVal < yMax) {
-            var ly = GraphRenderer.mmolToPixelY(mmolVal, graphY, graphH, yMin, yRange);
-            var ldx = (labelX - 28) - r;
+            var ly = GraphRenderer.mmolToPixelY(
+                mmolVal,
+                graphY,
+                graphH,
+                yMin,
+                yRange
+            );
+            var ldx = labelX - 28 - r;
             var ldy = ly - r;
-            if ((ldx * ldx + ldy * ldy) < rSq) {
-                dc.setColor(Conversions.COLOR_NEON_PURPLE, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(labelX, ly, labelFont, mmolVal.format("%.0f"),
-                    Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+            if (ldx * ldx + ldy * ldy < rSq) {
+                dc.setColor(
+                    Conversions.COLOR_NEON_PURPLE,
+                    Graphics.COLOR_TRANSPARENT
+                );
+                dc.drawText(
+                    labelX,
+                    ly,
+                    labelFont,
+                    mmolVal.format("%.0f"),
+                    Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER
+                );
             }
             mmolVal += yStep;
         }
@@ -447,41 +595,78 @@ class SugarWaveView extends WatchUi.WatchFace {
 
         for (var hOffset = -6; hOffset <= 0; hOffset++) {
             var labelHour = currentHour + hOffset;
-            while (labelHour < 0) { labelHour += 24; }
+            while (labelHour < 0) {
+                labelHour += 24;
+            }
             labelHour = labelHour % 24;
 
-            var hourTimeMs = newestTime + hOffset.toLong() * 3600000l - minMs - secMs;
-            if (hourTimeMs < oldestTime || hourTimeMs > newestTime) { continue; }
+            var hourTimeMs =
+                newestTime + hOffset.toLong() * 3600000l - minMs - secMs;
+            if (hourTimeMs < oldestTime || hourTimeMs > newestTime) {
+                continue;
+            }
 
-            var lx = GraphRenderer.timeToPixelX(hourTimeMs, graphX, graphW, newestTime, DETAIL_DURATION_MS);
+            var lx = GraphRenderer.timeToPixelX(
+                hourTimeMs,
+                graphX,
+                graphW,
+                newestTime,
+                DETAIL_DURATION_MS
+            );
             var xdx = lx - r;
             var xdy = xLabelY - r;
-            if ((xdx * xdx + xdy * xdy) < rInsetSq) {
-                dc.setColor(Conversions.COLOR_NEON_PURPLE, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(lx, xLabelY, labelFont, labelHour.format("%02d"),
-                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            if (xdx * xdx + xdy * xdy < rInsetSq) {
+                dc.setColor(
+                    Conversions.COLOR_NEON_PURPLE,
+                    Graphics.COLOR_TRANSPARENT
+                );
+                dc.drawText(
+                    lx,
+                    xLabelY,
+                    labelFont,
+                    labelHour.format("%02d"),
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+                );
             }
         }
 
         // Plot data points
-        if (mHistory.size() == 0) { return; }
+        if (mHistory.size() == 0) {
+            return;
+        }
 
         var points = [] as Array;
         for (var i = mHistory.size() - 1; i >= 0; i--) {
             var entry = mHistory[i] as Dictionary;
             var t = entry[:time] as Long;
-            if (t < oldestTime) { continue; }
+            if (t < oldestTime) {
+                continue;
+            }
             var bg = entry[:bg] as Float;
-            var px = GraphRenderer.timeToPixelX(t, graphX, graphW, newestTime, DETAIL_DURATION_MS);
-            var py = GraphRenderer.mmolToPixelY(bg, graphY, graphH, yMin, yRange);
-            points.add({:px => px, :py => py, :bg => bg});
+            var px = GraphRenderer.timeToPixelX(
+                t,
+                graphX,
+                graphW,
+                newestTime,
+                DETAIL_DURATION_MS
+            );
+            var py = GraphRenderer.mmolToPixelY(
+                bg,
+                graphY,
+                graphH,
+                yMin,
+                yRange
+            );
+            points.add({ :px => px, :py => py, :bg => bg });
         }
 
-        if (points.size() == 0) { return; }
+        if (points.size() == 0) {
+            return;
+        }
 
         // Neon glow connecting lines
         dc.setAntiAlias(true);
-        var lr = 0xFF;
+        var lr = 0xff;
         var lg = 0x00;
         var lb = 0x66;
 
@@ -490,24 +675,36 @@ class SugarWaveView extends WatchUi.WatchFace {
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
-            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
-                curr[:px] as Number, curr[:py] as Number);
+            dc.drawLine(
+                prev[:px] as Number,
+                prev[:py] as Number,
+                curr[:px] as Number,
+                curr[:py] as Number
+            );
         }
         dc.setStroke(Graphics.createColor(60, lr, lg, lb));
         dc.setPenWidth(3);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
-            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
-                curr[:px] as Number, curr[:py] as Number);
+            dc.drawLine(
+                prev[:px] as Number,
+                prev[:py] as Number,
+                curr[:px] as Number,
+                curr[:py] as Number
+            );
         }
         dc.setStroke(Graphics.createColor(255, lr, lg, lb));
         dc.setPenWidth(1);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
-            dc.drawLine(prev[:px] as Number, prev[:py] as Number,
-                curr[:px] as Number, curr[:py] as Number);
+            dc.drawLine(
+                prev[:px] as Number,
+                prev[:py] as Number,
+                curr[:px] as Number,
+                curr[:py] as Number
+            );
         }
         dc.setPenWidth(1);
 
@@ -516,9 +713,9 @@ class SugarWaveView extends WatchUi.WatchFace {
             var pt = points[i] as Dictionary;
             var bg = pt[:bg] as Float;
             var dotColor = Conversions.graphDotColor(bg, mBgLow, mBgHigh);
-            var dr = (dotColor >> 16) & 0xFF;
-            var dg = (dotColor >> 8) & 0xFF;
-            var db = dotColor & 0xFF;
+            var dr = (dotColor >> 16) & 0xff;
+            var dg = (dotColor >> 8) & 0xff;
+            var db = dotColor & 0xff;
             dc.setFill(Graphics.createColor(25, dr, dg, db));
             dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 5);
             dc.setFill(Graphics.createColor(80, dr, dg, db));
@@ -530,8 +727,15 @@ class SugarWaveView extends WatchUi.WatchFace {
     }
 
     // ── Detail header: BG + delta + age (row 1) + prediction (row 2) ──
-    hidden function drawDetailHeader(dc as Dc, w as Number, h as Number, cy as Number) as Void {
-        if (mReadings == null || mReadings.size() == 0) { return; }
+    hidden function drawDetailHeader(
+        dc as Dc,
+        w as Number,
+        h as Number,
+        cy as Number
+    ) as Void {
+        if (mReadings == null || mReadings.size() == 0) {
+            return;
+        }
 
         var latest = mReadings[0] as Dictionary;
         var bgMgdl = Conversions.parseFloat(latest["sgv"]);
@@ -542,14 +746,20 @@ class SugarWaveView extends WatchUi.WatchFace {
         var deltaMgdl = 0.0f;
         if (mReadings.size() >= 2) {
             var prev = mReadings[1] as Dictionary;
-            if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
-                latest.hasKey("date") && prev.hasKey("date")) {
+            if (
+                latest.hasKey("sgv") &&
+                prev.hasKey("sgv") &&
+                latest.hasKey("date") &&
+                prev.hasKey("date")
+            ) {
                 var t0 = Conversions.parseLong(latest["date"]);
                 var t1 = Conversions.parseLong(prev["date"]);
                 var dtMs = t0 - t1;
                 if (dtMs > 0) {
-                    deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
-                        / (dtMs.toFloat() / 300000.0f);
+                    deltaMgdl =
+                        (Conversions.parseFloat(latest["sgv"]) -
+                            Conversions.parseFloat(prev["sgv"])) /
+                        (dtMs.toFloat() / 300000.0f);
                 }
             }
         }
@@ -557,9 +767,16 @@ class SugarWaveView extends WatchUi.WatchFace {
         var deltaText = Conversions.formatDelta(deltaMmol);
         var direction = Conversions.directionFromDelta(deltaMgdl);
 
-        var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
-        var minutesSince = lastTime > 0 ?
-            ((Time.now().value().toLong() - lastTime / 1000) / 60).toNumber() : -1;
+        var lastTime = latest.hasKey("date")
+            ? Conversions.parseLong(latest["date"])
+            : 0l;
+        var minutesSince =
+            lastTime > 0
+                ? (
+                      (Time.now().value().toLong() - lastTime / 1000) /
+                      60
+                  ).toNumber()
+                : -1;
         var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
 
         // Chord-aware layout
@@ -581,28 +798,55 @@ class SugarWaveView extends WatchUi.WatchFace {
         // Shrink gaps if too wide for chord
         if (totalW > maxW) {
             gap = (maxW - arrowSize - bgW - deltaW - ageW) / 3;
-            if (gap < 2) { gap = 2; }
+            if (gap < 2) {
+                gap = 2;
+            }
             totalW = arrowSize + gap + bgW + gap + deltaW + gap + ageW;
         }
 
         var x = (w - totalW) / 2;
 
-        ArrowRenderer.draw(dc, x + arrowSize / 2, cy, arrowSize, direction, bgCol);
+        ArrowRenderer.draw(
+            dc,
+            x + arrowSize / 2,
+            cy,
+            arrowSize,
+            direction,
+            bgCol
+        );
         x += arrowSize + gap;
 
         dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, smallFont, bgText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(
+            x,
+            cy,
+            smallFont,
+            bgText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
         x += bgW + gap;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, tinyFont, deltaText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(
+            x,
+            cy,
+            tinyFont,
+            deltaText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
         x += deltaW + gap;
 
-        dc.setColor(Conversions.staleColor(minutesSince), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, tinyFont, ageText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.setColor(
+            Conversions.staleColor(minutesSince),
+            Graphics.COLOR_TRANSPARENT
+        );
+        dc.drawText(
+            x,
+            cy,
+            tinyFont,
+            ageText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
 
         // Row 2: Time-to-threshold prediction (if ≤30 min)
         // deltaMmol is per 5 min, so per-minute rate = deltaMmol / 5
@@ -612,15 +856,20 @@ class SugarWaveView extends WatchUi.WatchFace {
 
         if (deltaMmolPerMin < -0.01f) {
             if (bgMmol > mBgHigh) {
-                var minTo = ((bgMmol - mBgHigh) / (-deltaMmolPerMin)).toNumber();
+                var minTo = ((bgMmol - mBgHigh) / -deltaMmolPerMin).toNumber();
                 if (minTo > 0 && minTo <= 30) {
-                    predText = mBgHigh.format("%.1f") + " in " + minTo.toString() + "'";
+                    predText =
+                        mBgHigh.format("%.1f") +
+                        " in " +
+                        minTo.toString() +
+                        "'";
                     predColor = Conversions.COLOR_HIGH;
                 }
             } else if (bgMmol > mBgLow) {
-                var minTo = ((bgMmol - mBgLow) / (-deltaMmolPerMin)).toNumber();
+                var minTo = ((bgMmol - mBgLow) / -deltaMmolPerMin).toNumber();
                 if (minTo > 0 && minTo <= 30) {
-                    predText = mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
+                    predText =
+                        mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
                     predColor = Conversions.COLOR_LOW;
                 }
             }
@@ -628,13 +877,18 @@ class SugarWaveView extends WatchUi.WatchFace {
             if (bgMmol < mBgLow) {
                 var minTo = ((mBgLow - bgMmol) / deltaMmolPerMin).toNumber();
                 if (minTo > 0 && minTo <= 30) {
-                    predText = mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
+                    predText =
+                        mBgLow.format("%.1f") + " in " + minTo.toString() + "'";
                     predColor = Conversions.COLOR_LOW;
                 }
             } else if (bgMmol < mBgHigh) {
                 var minTo = ((mBgHigh - bgMmol) / deltaMmolPerMin).toNumber();
                 if (minTo > 0 && minTo <= 30) {
-                    predText = mBgHigh.format("%.1f") + " in " + minTo.toString() + "'";
+                    predText =
+                        mBgHigh.format("%.1f") +
+                        " in " +
+                        minTo.toString() +
+                        "'";
                     predColor = Conversions.COLOR_HIGH;
                 }
             }
@@ -643,8 +897,13 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (predText != null) {
             var predY = (h * 0.22f).toNumber();
             dc.setColor(predColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, predY, tinyFont, predText,
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(
+                w / 2,
+                predY,
+                tinyFont,
+                predText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            );
         }
     }
 
@@ -654,10 +913,16 @@ class SugarWaveView extends WatchUi.WatchFace {
         var cy = (h * 0.84f).toNumber();
 
         if (mReadings == null || mReadings.size() == 0) {
-            NeonRenderer.drawGlowText(dc, w / 2, cy,
-                Graphics.FONT_LARGE, "---",
+            NeonRenderer.drawGlowText(
+                dc,
+                w / 2,
+                cy,
+                Graphics.FONT_LARGE,
+                "---",
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER,
-                Conversions.COLOR_DATE, Conversions.COLOR_DIM_PURPLE);
+                Conversions.COLOR_DATE,
+                Conversions.COLOR_DIM_PURPLE
+            );
             return;
         }
 
@@ -672,14 +937,20 @@ class SugarWaveView extends WatchUi.WatchFace {
         var deltaMgdl = 0.0f;
         if (mReadings.size() >= 2) {
             var prev = mReadings[1] as Dictionary;
-            if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
-                latest.hasKey("date") && prev.hasKey("date")) {
+            if (
+                latest.hasKey("sgv") &&
+                prev.hasKey("sgv") &&
+                latest.hasKey("date") &&
+                prev.hasKey("date")
+            ) {
                 var t0 = Conversions.parseLong(latest["date"]);
                 var t1 = Conversions.parseLong(prev["date"]);
                 var dtMs = t0 - t1;
                 if (dtMs > 0) {
-                    deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
-                        / (dtMs.toFloat() / 300000.0f);
+                    deltaMgdl =
+                        (Conversions.parseFloat(latest["sgv"]) -
+                            Conversions.parseFloat(prev["sgv"])) /
+                        (dtMs.toFloat() / 300000.0f);
                 }
             }
         } else if (latest.hasKey("delta")) {
@@ -689,9 +960,16 @@ class SugarWaveView extends WatchUi.WatchFace {
         var deltaText = Conversions.formatDelta(deltaMmol);
         var direction = Conversions.directionFromDelta(deltaMgdl);
 
-        var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
-        var minutesSince = lastTime > 0 ?
-            ((Time.now().value().toLong() - lastTime / 1000) / 60).toNumber() : -1;
+        var lastTime = latest.hasKey("date")
+            ? Conversions.parseLong(latest["date"])
+            : 0l;
+        var minutesSince =
+            lastTime > 0
+                ? (
+                      (Time.now().value().toLong() - lastTime / 1000) /
+                      60
+                  ).toNumber()
+                : -1;
         var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
         var ageColor = Conversions.staleColor(minutesSince);
 
@@ -714,21 +992,35 @@ class SugarWaveView extends WatchUi.WatchFace {
         var maxW = (chord * 0.90f).toNumber();
         if (totalW > maxW) {
             gap = (maxW - arrowSize - bgW - deltaW - ageW) / 3;
-            if (gap < 4) { gap = 4; }
+            if (gap < 4) {
+                gap = 4;
+            }
             totalW = arrowSize + gap + bgW + gap + deltaW + gap + ageW;
         }
 
         var x = (w - totalW) / 2;
 
         // Arrow
-        ArrowRenderer.draw(dc, x + arrowSize / 2, cy, arrowSize, direction, bgCol);
+        ArrowRenderer.draw(
+            dc,
+            x + arrowSize / 2,
+            cy,
+            arrowSize,
+            direction,
+            bgCol
+        );
         x += arrowSize + gap;
 
         // BG value — crisp neon
         var bgX = x;
         dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, bgFont, bgText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(
+            x,
+            cy,
+            bgFont,
+            bgText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
         // Strikethrough when data is ≥10 min stale
         if (minutesSince >= Conversions.STALE_MINUTES) {
             dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
@@ -740,15 +1032,24 @@ class SugarWaveView extends WatchUi.WatchFace {
 
         // Delta — white for max contrast (21:1)
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, smallFont, deltaText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(
+            x,
+            cy,
+            smallFont,
+            deltaText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
         x += deltaW + gap;
 
         // Time since — color-coded by staleness
         dc.setColor(ageColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, cy, smallFont, ageText,
-            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-
+        dc.drawText(
+            x,
+            cy,
+            smallFont,
+            ageText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
     }
 
     // ── Low-Power / AOD Rendering ──
@@ -768,15 +1069,22 @@ class SugarWaveView extends WatchUi.WatchFace {
         var clockTime = System.getClockTime();
         var hours = clockTime.hour;
         if (!System.getDeviceSettings().is24Hour) {
-            if (hours == 0) { hours = 12; }
-            else if (hours > 12) { hours = hours - 12; }
+            if (hours == 0) {
+                hours = 12;
+            } else if (hours > 12) {
+                hours = hours - 12;
+            }
         }
         var timeStr = hours.toString() + ":" + clockTime.min.format("%02d");
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2 + sx, (h * 0.28f).toNumber() + sy,
-            Graphics.FONT_NUMBER_MEDIUM, timeStr,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.setColor(Conversions.COLOR_NEON_CYAN, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(
+            w / 2 + sx,
+            (h * 0.28f).toNumber() + sy,
+            Graphics.FONT_NUMBER_MEDIUM,
+            timeStr,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+        );
 
         // BG value (full-brightness color — small area, pixel shift protects burn-in)
         if (mReadings != null && mReadings.size() > 0) {
@@ -786,51 +1094,83 @@ class SugarWaveView extends WatchUi.WatchFace {
             var bgText = bgMmol.format("%.1f");
             var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-            var lastTime = latest.hasKey("date") ? Conversions.parseLong(latest["date"]) : 0l;
-            var minutesSince = lastTime > 0 ?
-                ((Time.now().value().toLong() - lastTime / 1000) / 60).toNumber() : -1;
-            var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
+            var lastTime = latest.hasKey("date")
+                ? Conversions.parseLong(latest["date"])
+                : 0l;
+            var minutesSince =
+                lastTime > 0
+                    ? (
+                          (Time.now().value().toLong() - lastTime / 1000) /
+                          60
+                      ).toNumber()
+                    : -1;
+            var ageText =
+                minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
 
             // Compute delta from sgv values (same logic as high-power)
             var deltaMgdl = 0.0f;
             if (mReadings.size() >= 2) {
                 var prev = mReadings[1] as Dictionary;
-                if (latest.hasKey("sgv") && prev.hasKey("sgv") &&
-                    latest.hasKey("date") && prev.hasKey("date")) {
+                if (
+                    latest.hasKey("sgv") &&
+                    prev.hasKey("sgv") &&
+                    latest.hasKey("date") &&
+                    prev.hasKey("date")
+                ) {
                     var t0 = Conversions.parseLong(latest["date"]);
                     var t1 = Conversions.parseLong(prev["date"]);
                     var dtMs = t0 - t1;
                     if (dtMs > 0) {
-                        deltaMgdl = (Conversions.parseFloat(latest["sgv"]) - Conversions.parseFloat(prev["sgv"]))
-                            / (dtMs.toFloat() / 300000.0f);
+                        deltaMgdl =
+                            (Conversions.parseFloat(latest["sgv"]) -
+                                Conversions.parseFloat(prev["sgv"])) /
+                            (dtMs.toFloat() / 300000.0f);
                     }
                 }
             } else if (latest.hasKey("delta")) {
                 deltaMgdl = Conversions.parseFloat(latest["delta"]);
             }
-            var deltaText = Conversions.formatDelta(Conversions.mgdlToMmol(deltaMgdl));
+            var deltaText = Conversions.formatDelta(
+                Conversions.mgdlToMmol(deltaMgdl)
+            );
 
             // BG — full color
             var bgCy = (h * 0.43f).toNumber() + sy;
             dc.setColor(bgCol, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w / 2 + sx, bgCy,
-                Graphics.FONT_LARGE, bgText,
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(
+                w / 2 + sx,
+                bgCy,
+                Graphics.FONT_LARGE,
+                bgText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            );
 
             // Strikethrough when stale
             if (minutesSince >= Conversions.STALE_MINUTES) {
                 var bgW = dc.getTextWidthInPixels(bgText, Graphics.FONT_LARGE);
-                dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
+                dc.setColor(
+                    Conversions.COLOR_STALE,
+                    Graphics.COLOR_TRANSPARENT
+                );
                 dc.setPenWidth(3);
-                dc.drawLine(w / 2 - bgW / 2 + sx, bgCy, w / 2 + bgW / 2 + sx, bgCy);
+                dc.drawLine(
+                    w / 2 - bgW / 2 + sx,
+                    bgCy,
+                    w / 2 + bgW / 2 + sx,
+                    bgCy
+                );
                 dc.setPenWidth(1);
             }
 
             // Delta + age below BG — light gray for readability
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w / 2 + sx, (h * 0.53f).toNumber() + sy,
-                Graphics.FONT_TINY, deltaText + "  " + ageText,
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(
+                w / 2 + sx,
+                (h * 0.53f).toNumber() + sy,
+                Graphics.FONT_TINY,
+                deltaText + "  " + ageText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            );
         }
 
         // Graph (simplified, dimmed, no perspective grid)
@@ -844,36 +1184,92 @@ class SugarWaveView extends WatchUi.WatchFace {
             var chord = 2.0f * Math.sqrt((r * r - absDy * absDy).toFloat());
             var padX = ((w - chord) / 2 + w * 0.06f).toNumber();
 
-            GraphRenderer.drawAOD(dc, padX + sx, graphY, w - 2 * padX, graphH,
-                mHistory, mGraphDuration, mBgLow, mBgHigh);
+            GraphRenderer.drawAOD(
+                dc,
+                padX + sx,
+                graphY,
+                w - 2 * padX,
+                graphH,
+                mHistory,
+                mGraphDuration,
+                mBgLow,
+                mBgHigh
+            );
+        }
+
+        // Steps below graph
+        var stepsText = getSteps();
+        if (!stepsText.equals("--")) {
+            dc.setColor(
+                Conversions.COLOR_NEON_PINK,
+                Graphics.COLOR_TRANSPARENT
+            );
+            dc.drawText(
+                w / 2 + sx,
+                (h * 0.89f).toNumber() + sy,
+                Graphics.FONT_MEDIUM,
+                stepsText,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            );
         }
     }
 
     hidden function updatePixelShift() as Void {
         var clockTime = System.getClockTime();
-        if (clockTime.min == mShiftMinute) { return; }
+        if (clockTime.min == mShiftMinute) {
+            return;
+        }
         mShiftMinute = clockTime.min;
 
         var phase = clockTime.min % 4;
-        if (phase == 0) { mPixelShiftX = 0; mPixelShiftY = 0; }
-        else if (phase == 1) { mPixelShiftX = 3; mPixelShiftY = 0; }
-        else if (phase == 2) { mPixelShiftX = 3; mPixelShiftY = 3; }
-        else { mPixelShiftX = 0; mPixelShiftY = 3; }
+        if (phase == 0) {
+            mPixelShiftX = 0;
+            mPixelShiftY = 0;
+        } else if (phase == 1) {
+            mPixelShiftX = 3;
+            mPixelShiftY = 0;
+        } else if (phase == 2) {
+            mPixelShiftX = 3;
+            mPixelShiftY = 3;
+        } else {
+            mPixelShiftX = 0;
+            mPixelShiftY = 3;
+        }
     }
 
     // ── Complication Data Retrieval ──
 
     hidden function getCompValue(type as Number) as String {
-        if (type == 0) { return getSteps(); }
-        if (type == 1) { return getFloors(); }
-        if (type == 2) { return getHeartRate(); }
-        if (type == 3) { return getTemperature(); }
-        if (type == 4) { return getStress(); }
-        if (type == 5) { return getRecovery(); }
-        if (type == 6) { return getCalories(); }
-        if (type == 7) { return getBodyBattery(); }
-        if (type == 8) { return getBatteryLevel(); }
-        if (type == 9) { return getNotifications(); }
+        if (type == 0) {
+            return getSteps();
+        }
+        if (type == 1) {
+            return getFloors();
+        }
+        if (type == 2) {
+            return getHeartRate();
+        }
+        if (type == 3) {
+            return getTemperature();
+        }
+        if (type == 4) {
+            return getStress();
+        }
+        if (type == 5) {
+            return getRecovery();
+        }
+        if (type == 6) {
+            return getCalories();
+        }
+        if (type == 7) {
+            return getBodyBattery();
+        }
+        if (type == 8) {
+            return getBatteryLevel();
+        }
+        if (type == 9) {
+            return getNotifications();
+        }
         return "--";
     }
 
@@ -886,7 +1282,10 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (steps == null && Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_STEPS));
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_STEPS
+                    )
+                );
                 if (comp.value != null) {
                     // API returns float in thousands for large values (e.g. 5.382 = 5382)
                     var fval = comp.value.toFloat();
@@ -900,14 +1299,21 @@ class SugarWaveView extends WatchUi.WatchFace {
                 }
             } catch (ex) {}
         }
-        if (steps == null) { return "--"; }
+        if (steps == null) {
+            return "--";
+        }
         return formatCompact(steps);
     }
 
     // Format large numbers compactly: 12345 → "12.3k"
     hidden function formatCompact(val as Number) as String {
         if (val >= 10000) {
-            return (val / 1000).toString() + "." + ((val % 1000) / 100).toString() + "k";
+            return (
+                (val / 1000).toString() +
+                "." +
+                ((val % 1000) / 100).toString() +
+                "k"
+            );
         }
         return val.toString();
     }
@@ -916,13 +1322,20 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_FLOORS_CLIMBED));
-                if (comp.value != null) { return comp.value.toNumber().toString(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_FLOORS_CLIMBED
+                    )
+                );
+                if (comp.value != null) {
+                    return comp.value.toNumber().toString();
+                }
             } catch (ex) {}
         }
         if (Toybox has :ActivityMonitor) {
             var info = ActivityMonitor.getInfo();
-            if (info.floorsClimbed != null) { return info.floorsClimbed.toString(); }
+            if (info.floorsClimbed != null) {
+                return info.floorsClimbed.toString();
+            }
         }
         return "--";
     }
@@ -931,15 +1344,26 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_HEART_RATE));
-                if (comp.value != null) { return comp.value.toNumber().toString(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_HEART_RATE
+                    )
+                );
+                if (comp.value != null) {
+                    return comp.value.toNumber().toString();
+                }
             } catch (ex) {}
         }
-        if (Toybox has :SensorHistory && SensorHistory has :getHeartRateHistory) {
+        if (
+            Toybox has :SensorHistory &&
+            SensorHistory has :getHeartRateHistory
+        ) {
             var iter = SensorHistory.getHeartRateHistory({});
             var sample = iter.next();
-            if (sample != null && sample.data != null &&
-                sample.data != ActivityMonitor.INVALID_HR_SAMPLE) {
+            if (
+                sample != null &&
+                sample.data != null &&
+                sample.data != ActivityMonitor.INVALID_HR_SAMPLE
+            ) {
                 return sample.data.toNumber().toString();
             }
         }
@@ -950,13 +1374,20 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_CURRENT_TEMPERATURE));
+                    new Toybox.Complications.Id(
+                        Toybox.Complications
+                            .COMPLICATION_TYPE_CURRENT_TEMPERATURE
+                    )
+                );
                 if (comp.value != null) {
                     return (comp.value + 0.5).toNumber().toString() + "\u00B0";
                 }
             } catch (ex) {}
         }
-        if (Toybox has :SensorHistory && SensorHistory has :getTemperatureHistory) {
+        if (
+            Toybox has :SensorHistory &&
+            SensorHistory has :getTemperatureHistory
+        ) {
             var iter = SensorHistory.getTemperatureHistory({});
             var sample = iter.next();
             if (sample != null && sample.data != null) {
@@ -970,8 +1401,13 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_STRESS));
-                if (comp.value != null) { return (comp.value + 0.5).toNumber().toString(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_STRESS
+                    )
+                );
+                if (comp.value != null) {
+                    return (comp.value + 0.5).toNumber().toString();
+                }
             } catch (ex) {}
         }
         if (Toybox has :SensorHistory && SensorHistory has :getStressHistory) {
@@ -988,8 +1424,13 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_RECOVERY_TIME));
-                if (comp.value != null) { return (comp.value / 60).toNumber().toString() + "h"; }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_RECOVERY_TIME
+                    )
+                );
+                if (comp.value != null) {
+                    return (comp.value / 60).toNumber().toString() + "h";
+                }
             } catch (ex) {}
         }
         if (Toybox has :ActivityMonitor) {
@@ -1006,15 +1447,22 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_CALORIES));
-                if (comp.value != null) { cal = comp.value.toNumber(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_CALORIES
+                    )
+                );
+                if (comp.value != null) {
+                    cal = comp.value.toNumber();
+                }
             } catch (ex) {}
         }
         if (cal == null && Toybox has :ActivityMonitor) {
             var info = ActivityMonitor.getInfo();
             cal = info.calories;
         }
-        if (cal == null) { return "--"; }
+        if (cal == null) {
+            return "--";
+        }
         return formatCompact(cal);
     }
 
@@ -1022,11 +1470,19 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_BODY_BATTERY));
-                if (comp.value != null) { return (comp.value + 0.5).toNumber().toString(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_BODY_BATTERY
+                    )
+                );
+                if (comp.value != null) {
+                    return (comp.value + 0.5).toNumber().toString();
+                }
             } catch (ex) {}
         }
-        if (Toybox has :SensorHistory && SensorHistory has :getBodyBatteryHistory) {
+        if (
+            Toybox has :SensorHistory &&
+            SensorHistory has :getBodyBatteryHistory
+        ) {
             var iter = SensorHistory.getBodyBatteryHistory({});
             var sample = iter.next();
             if (sample != null && sample.data != null) {
@@ -1040,8 +1496,13 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_BATTERY));
-                if (comp.value != null) { return comp.value.format("%d") + "%"; }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications.COMPLICATION_TYPE_BATTERY
+                    )
+                );
+                if (comp.value != null) {
+                    return comp.value.format("%d") + "%";
+                }
             } catch (ex) {}
         }
         var stats = System.getSystemStats();
@@ -1055,8 +1516,14 @@ class SugarWaveView extends WatchUi.WatchFace {
         if (Toybox has :Complications) {
             try {
                 var comp = Toybox.Complications.getComplication(
-                    new Toybox.Complications.Id(Toybox.Complications.COMPLICATION_TYPE_NOTIFICATION_COUNT));
-                if (comp.value != null) { return comp.value.toNumber().toString(); }
+                    new Toybox.Complications.Id(
+                        Toybox.Complications
+                            .COMPLICATION_TYPE_NOTIFICATION_COUNT
+                    )
+                );
+                if (comp.value != null) {
+                    return comp.value.toNumber().toString();
+                }
             } catch (ex) {}
         }
         var settings = System.getDeviceSettings();
