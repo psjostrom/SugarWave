@@ -12,9 +12,10 @@ class SugarWaveBgService extends System.ServiceDelegate {
 
     function onTemporalEvent() {
         Communications.makeWebRequest(
-            "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=360",
+            Secrets.SPRINGA_URL + "/api/sgv?count=360",
             null,
             {
+                :headers => { "api-secret" => Secrets.SPRINGA_SECRET },
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceive)
@@ -42,9 +43,9 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 }
                 result.add(entry);
             }
-            Background.exit(result);
+            Background.exit({"ok" => true, "rc" => responseCode, "n" => result.size(), "data" => result});
         } else {
-            Background.exit(responseCode);
+            Background.exit({"ok" => false, "rc" => responseCode, "type" => (data != null ? "has_data" : "null")});
         }
     }
 }

@@ -87,9 +87,11 @@ class SugarWaveView extends WatchUi.WatchFace {
     hidden function watchdogBgService() as Void {
         try {
             if (!(Toybox.System has :ServiceDelegate)) {
+                Application.Storage.setValue("bgDebug", "no SvcDel");
                 return;
             }
             if (!System.getDeviceSettings().phoneConnected) {
+                Application.Storage.setValue("bgDebug", "no phone");
                 return;
             }
             var lastTime = Background.getLastTemporalEventTime();
@@ -98,8 +100,13 @@ class SugarWaveView extends WatchUi.WatchFace {
                 lastTime.value() < Time.now().value() - 600
             ) {
                 Background.registerForTemporalEvent(Time.now());
+                var reason = (lastTime == null) ? "null" : "stale";
+                Application.Storage.setValue("bgDebug", "wd:" + reason);
+                Application.Storage.setValue("bgDebugTime", Time.now().value());
             }
-        } catch (ex) {}
+        } catch (ex) {
+            Application.Storage.setValue("bgDebug", "wd:ex " + ex.getErrorMessage());
+        }
     }
 
     function onExitSleep() as Void {
@@ -189,6 +196,24 @@ class SugarWaveView extends WatchUi.WatchFace {
         drawComplications(dc, w, h);
         drawGraph(dc, w, h);
         drawCgmData(dc, w, h);
+        drawBgDebug(dc, w, h);
+    }
+
+    hidden function drawBgDebug(dc as Dc, w as Number, h as Number) as Void {
+        var msg = Application.Storage.getValue("bgDebug");
+        if (msg == null) {
+            msg = "no bg yet";
+        }
+        var debugTime = Application.Storage.getValue("bgDebugTime");
+        var ago = "";
+        if (debugTime != null && debugTime instanceof Number) {
+            var secs = Time.now().value() - (debugTime as Number);
+            ago = " " + (secs / 60).toString() + "m";
+        }
+        dc.setColor(0x888888, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, (h * 0.95f).toNumber(), Graphics.FONT_XTINY,
+            msg.toString() + ago,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     // ── Zone 1: Time + Date (stacked tight) ──

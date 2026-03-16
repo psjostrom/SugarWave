@@ -31,15 +31,38 @@ class SugarWaveApp extends Application.AppBase {
 
     function onBackgroundData(data) as Void {
         var latestDateMs = 0l;
-        if (data instanceof Lang.Array && data.size() > 0) {
-            var arr = data as Array;
-            if (arr[0] instanceof Dictionary && (arr[0] as Dictionary).hasKey("date")) {
-                Application.Storage.setValue("cgmReadings", data);
-                var d = (arr[0] as Dictionary)["date"];
-                if (d instanceof Long) { latestDateMs = d as Long; }
-                else if (d instanceof Number) { latestDateMs = (d as Number).toLong(); }
+
+        // Debug: store raw background result info
+        if (data instanceof Dictionary) {
+            var dict = data as Dictionary;
+            var ok = dict.hasKey("ok") ? dict["ok"] : false;
+            var rc = dict.hasKey("rc") ? dict["rc"] : -1;
+            var n = dict.hasKey("n") ? dict["n"] : 0;
+
+            if (ok == true && dict.hasKey("data")) {
+                var readings = dict["data"] as Array;
+                if (readings.size() > 0) {
+                    Application.Storage.setValue("cgmReadings", readings);
+                    var first = readings[0] as Dictionary;
+                    if (first.hasKey("date")) {
+                        var d = first["date"];
+                        if (d instanceof Long) { latestDateMs = d as Long; }
+                        else if (d instanceof Number) { latestDateMs = (d as Number).toLong(); }
+                    }
+                }
+                Application.Storage.setValue("bgDebug", "OK rc=" + rc + " n=" + n);
+            } else {
+                var typeStr = dict.hasKey("type") ? dict["type"].toString() : "?";
+                Application.Storage.setValue("bgDebug", "FAIL rc=" + rc + " " + typeStr);
             }
+        } else if (data instanceof Lang.Array) {
+            // Shouldn't happen with debug envelope, but fallback
+            Application.Storage.setValue("bgDebug", "RAW arr=" + (data as Array).size());
+        } else {
+            Application.Storage.setValue("bgDebug", "UNK " + data.toString().substring(0, 20));
         }
+        Application.Storage.setValue("bgDebugTime", Time.now().value());
+
         scheduleNextPoll(latestDateMs);
     }
 
