@@ -759,7 +759,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                     deltaMgdl =
                         (Conversions.parseFloat(latest["sgv"]) -
                             Conversions.parseFloat(prev["sgv"])) /
-                        (dtMs.toFloat() / 300000.0f);
+                        (dtMs.toFloat() / 60000.0f);
                 }
             }
         }
@@ -849,8 +849,8 @@ class SugarWaveView extends WatchUi.WatchFace {
         );
 
         // Row 2: Time-to-threshold prediction (if ≤30 min)
-        // deltaMmol is per 5 min, so per-minute rate = deltaMmol / 5
-        var deltaMmolPerMin = deltaMmol / 5.0f;
+        // deltaMmol is per minute
+        var deltaMmolPerMin = deltaMmol;
         var predText = null as String?;
         var predColor = 0;
 
@@ -950,7 +950,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                     deltaMgdl =
                         (Conversions.parseFloat(latest["sgv"]) -
                             Conversions.parseFloat(prev["sgv"])) /
-                        (dtMs.toFloat() / 300000.0f);
+                        (dtMs.toFloat() / 60000.0f);
                 }
             }
         } else if (latest.hasKey("delta")) {
@@ -1124,7 +1124,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                         deltaMgdl =
                             (Conversions.parseFloat(latest["sgv"]) -
                                 Conversions.parseFloat(prev["sgv"])) /
-                            (dtMs.toFloat() / 300000.0f);
+                            (dtMs.toFloat() / 60000.0f);
                     }
                 }
             } else if (latest.hasKey("delta")) {
