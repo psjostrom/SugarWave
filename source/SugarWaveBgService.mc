@@ -1,3 +1,4 @@
+import Toybox.Application;
 import Toybox.System;
 import Toybox.Communications;
 import Toybox.Background;
@@ -11,8 +12,11 @@ class SugarWaveBgService extends System.ServiceDelegate {
     }
 
     function onTemporalEvent() {
+        // Match count to graph duration setting (minutes ≈ readings at 1/min)
+        var dur = Application.Properties.getValue("graphDuration");
+        var count = (dur != null && dur instanceof Number) ? dur as Number : 60;
         Communications.makeWebRequest(
-            Secrets.SPRINGA_URL + "/api/sgv?count=360",
+            Secrets.SPRINGA_URL + "/api/sgv?count=" + count,
             null,
             {
                 :headers => { "api-secret" => Secrets.SPRINGA_SECRET },
@@ -43,9 +47,9 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 }
                 result.add(entry);
             }
-            Background.exit({"ok" => true, "rc" => responseCode, "n" => result.size(), "data" => result});
+            Background.exit(result);
         } else {
-            Background.exit({"ok" => false, "rc" => responseCode, "type" => (data != null ? "has_data" : "null")});
+            Background.exit(responseCode);
         }
     }
 }
