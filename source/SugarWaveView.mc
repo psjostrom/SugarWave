@@ -743,13 +743,10 @@ class SugarWaveView extends WatchUi.WatchFace {
         var bgText = bgMmol.format("%.1f");
         var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-        // Use smoothed delta + direction from API (5-min lookback, 3-point avg)
-        var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
+        var deltaMgdl = Conversions.parseFloat(latest["delta"]);
         var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
         var deltaText = Conversions.formatDelta(deltaMmol);
-        var direction = latest.hasKey("direction")
-            ? Conversions.directionFromString(latest["direction"])
-            : Conversions.directionFromDelta(deltaMgdl);
+        var direction = Conversions.directionFromString(latest["direction"]);
 
         var lastTime = latest.hasKey("date")
             ? Conversions.parseLong(latest["date"])
@@ -916,12 +913,10 @@ class SugarWaveView extends WatchUi.WatchFace {
         var bgText = bgMmol.format("%.1f");
         var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-        var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
+        var deltaMgdl = Conversions.parseFloat(latest["delta"]);
         var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
         var deltaText = Conversions.formatDelta(deltaMmol);
-        var direction = latest.hasKey("direction")
-            ? Conversions.directionFromString(latest["direction"])
-            : Conversions.directionFromDelta(deltaMgdl);
+        var direction = Conversions.directionFromString(latest["direction"]);
 
         var lastTime = latest.hasKey("date")
             ? Conversions.parseLong(latest["date"])
@@ -1070,7 +1065,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             var ageText =
                 minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
 
-            var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
+            var deltaMgdl = Conversions.parseFloat(latest["delta"]);
             var deltaText = Conversions.formatDelta(
                 Conversions.mgdlToMmol(deltaMgdl)
             );
