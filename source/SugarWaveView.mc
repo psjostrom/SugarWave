@@ -743,29 +743,13 @@ class SugarWaveView extends WatchUi.WatchFace {
         var bgText = bgMmol.format("%.1f");
         var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-        var deltaMgdl = 0.0f;
-        if (mReadings.size() >= 2) {
-            var prev = mReadings[1] as Dictionary;
-            if (
-                latest.hasKey("sgv") &&
-                prev.hasKey("sgv") &&
-                latest.hasKey("date") &&
-                prev.hasKey("date")
-            ) {
-                var t0 = Conversions.parseLong(latest["date"]);
-                var t1 = Conversions.parseLong(prev["date"]);
-                var dtMs = t0 - t1;
-                if (dtMs > 0) {
-                    deltaMgdl =
-                        (Conversions.parseFloat(latest["sgv"]) -
-                            Conversions.parseFloat(prev["sgv"])) /
-                        (dtMs.toFloat() / 60000.0f);
-                }
-            }
-        }
+        // Use smoothed delta + direction from API (5-min lookback, 3-point avg)
+        var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
         var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
         var deltaText = Conversions.formatDelta(deltaMmol);
-        var direction = Conversions.directionFromDelta(deltaMgdl);
+        var direction = latest.hasKey("direction")
+            ? Conversions.directionFromString(latest["direction"])
+            : Conversions.directionFromDelta(deltaMgdl);
 
         var lastTime = latest.hasKey("date")
             ? Conversions.parseLong(latest["date"])
@@ -932,33 +916,12 @@ class SugarWaveView extends WatchUi.WatchFace {
         var bgText = bgMmol.format("%.1f");
         var bgCol = Conversions.bgColor(bgMmol, mBgLow, mBgHigh);
 
-        // Compute delta + direction from sgv values (xDrip+ companion mode
-        // returns stale/wrong delta and direction fields — issue #3787)
-        var deltaMgdl = 0.0f;
-        if (mReadings.size() >= 2) {
-            var prev = mReadings[1] as Dictionary;
-            if (
-                latest.hasKey("sgv") &&
-                prev.hasKey("sgv") &&
-                latest.hasKey("date") &&
-                prev.hasKey("date")
-            ) {
-                var t0 = Conversions.parseLong(latest["date"]);
-                var t1 = Conversions.parseLong(prev["date"]);
-                var dtMs = t0 - t1;
-                if (dtMs > 0) {
-                    deltaMgdl =
-                        (Conversions.parseFloat(latest["sgv"]) -
-                            Conversions.parseFloat(prev["sgv"])) /
-                        (dtMs.toFloat() / 60000.0f);
-                }
-            }
-        } else if (latest.hasKey("delta")) {
-            deltaMgdl = Conversions.parseFloat(latest["delta"]);
-        }
+        var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
         var deltaMmol = Conversions.mgdlToMmol(deltaMgdl);
         var deltaText = Conversions.formatDelta(deltaMmol);
-        var direction = Conversions.directionFromDelta(deltaMgdl);
+        var direction = latest.hasKey("direction")
+            ? Conversions.directionFromString(latest["direction"])
+            : Conversions.directionFromDelta(deltaMgdl);
 
         var lastTime = latest.hasKey("date")
             ? Conversions.parseLong(latest["date"])
@@ -1107,29 +1070,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             var ageText =
                 minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
 
-            // Compute delta from sgv values (same logic as high-power)
-            var deltaMgdl = 0.0f;
-            if (mReadings.size() >= 2) {
-                var prev = mReadings[1] as Dictionary;
-                if (
-                    latest.hasKey("sgv") &&
-                    prev.hasKey("sgv") &&
-                    latest.hasKey("date") &&
-                    prev.hasKey("date")
-                ) {
-                    var t0 = Conversions.parseLong(latest["date"]);
-                    var t1 = Conversions.parseLong(prev["date"]);
-                    var dtMs = t0 - t1;
-                    if (dtMs > 0) {
-                        deltaMgdl =
-                            (Conversions.parseFloat(latest["sgv"]) -
-                                Conversions.parseFloat(prev["sgv"])) /
-                            (dtMs.toFloat() / 60000.0f);
-                    }
-                }
-            } else if (latest.hasKey("delta")) {
-                deltaMgdl = Conversions.parseFloat(latest["delta"]);
-            }
+            var deltaMgdl = latest.hasKey("delta") ? Conversions.parseFloat(latest["delta"]) : 0.0f;
             var deltaText = Conversions.formatDelta(
                 Conversions.mgdlToMmol(deltaMgdl)
             );

@@ -71,15 +71,16 @@ module Conversions {
         return DIRECTION_NONE;
     }
 
-    // Derive trend direction from computed delta (mg/dL per minute).
-    // Same thresholds as SuperStable / xDrip+ internals.
+    // Derive trend direction from delta (mg/dL per minute).
+    // EASD/ISPAD 2020 thresholds (Moser et al., Diabetologia 2020):
+    // ±0.06 mmol/L/min (±1.1 mg/dL/min), ±0.11 (±2.0), ±0.17 (±3.0).
     function directionFromDelta(deltaMgdl as Float) as Direction {
-        if (deltaMgdl <= -3.5f) { return DIRECTION_DOUBLE_DOWN; }
+        if (deltaMgdl <= -3.0f) { return DIRECTION_DOUBLE_DOWN; }
         if (deltaMgdl <= -2.0f) { return DIRECTION_SINGLE_DOWN; }
-        if (deltaMgdl <= -1.0f) { return DIRECTION_FORTY_FIVE_DOWN; }
-        if (deltaMgdl <= 1.0f) { return DIRECTION_FLAT; }
+        if (deltaMgdl <= -1.1f) { return DIRECTION_FORTY_FIVE_DOWN; }
+        if (deltaMgdl <= 1.1f) { return DIRECTION_FLAT; }
         if (deltaMgdl <= 2.0f) { return DIRECTION_FORTY_FIVE_UP; }
-        if (deltaMgdl <= 3.5f) { return DIRECTION_SINGLE_UP; }
+        if (deltaMgdl <= 3.0f) { return DIRECTION_SINGLE_UP; }
         return DIRECTION_DOUBLE_UP;
     }
 
