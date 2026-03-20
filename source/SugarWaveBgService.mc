@@ -11,13 +11,15 @@ class SugarWaveBgService extends System.ServiceDelegate {
         ServiceDelegate.initialize();
     }
 
+    // Max entries through Background.exit() — empirically 90 works, 120 fails
+    const BG_EXIT_MAX = 90;
+
     function onTemporalEvent() {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur == null || !(dur instanceof Number)) { dur = 60; }
         var interval = Application.Properties.getValue("cgmInterval");
         if (interval == null || !(interval instanceof Number) || (interval as Number) < 1) { interval = 1; }
         var count = (dur as Number) / (interval as Number);
-        if (count > 90) { count = 90; }
         if (count < 6) { count = 6; }
         Communications.makeWebRequest(
             Secrets.SPRINGA_URL + "/api/sgv?count=" + count,
@@ -33,8 +35,15 @@ class SugarWaveBgService extends System.ServiceDelegate {
     function onReceive(responseCode as Number, data as Dictionary or String or Null) as Void {
         if (responseCode == 200 && data != null) {
             var readings = data as Array;
+            // Compute thin factor: keep every Nth entry to fit Background.exit() limit
+            var thin = 1;
+            if (readings.size() > BG_EXIT_MAX) {
+                thin = (readings.size() + BG_EXIT_MAX - 1) / BG_EXIT_MAX;
+            }
             var result = [] as Array;
             for (var i = 0; i < readings.size(); i++) {
+                // Always keep first entry (latest); thin the rest
+                if (i > 0 && thin > 1 && (i % thin) != 0) { continue; }
                 var r = readings[i] as Dictionary;
                 if (r["date"] == null || r["sgv"] == null) { continue; }
                 var dateVal = r["date"];
