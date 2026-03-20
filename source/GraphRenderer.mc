@@ -68,6 +68,30 @@ module GraphRenderer {
 
         if (points.size() == 0) { return; }
 
+        // Adaptive glow — scale radii by point density
+        var ds = 1.0f; // density scale
+        if (points.size() > 1) {
+            var totalDx = 0;
+            for (var i = 1; i < points.size(); i++) {
+                var dx = (points[i] as Dictionary)[:px] as Number - (points[i-1] as Dictionary)[:px] as Number;
+                if (dx < 0) { dx = -dx; }
+                totalDx += dx;
+            }
+            var avgSpacing = totalDx.toFloat() / (points.size() - 1);
+            ds = avgSpacing / 15.0f; // 15px = reference spacing (~5-min intervals)
+            if (ds > 1.0f) { ds = 1.0f; }
+            if (ds < 0.2f) { ds = 0.2f; }
+        }
+
+        var lineHalo = LINE_WIDTH + (10.0f * ds).toNumber();
+        var lineBloom = LINE_WIDTH + (4.0f * ds).toNumber();
+        var dotR = (DOT_RADIUS * ds).toNumber();
+        if (dotR < 2) { dotR = 2; }
+        var haloOuter = (DOT_RADIUS * 3.0f * ds).toNumber();
+        if (haloOuter < dotR + 1) { haloOuter = dotR + 1; }
+        var haloInner = (DOT_RADIUS * 2.0f * ds).toNumber();
+        if (haloInner < dotR) { haloInner = dotR; }
+
         // Connecting lines with neon glow (alpha multi-pass)
         dc.setAntiAlias(true);
         var lr = 0xFF;
@@ -75,7 +99,7 @@ module GraphRenderer {
         var lb = 0x66;
         // Wide dim halo
         dc.setStroke(Graphics.createColor(25, lr, lg, lb));
-        dc.setPenWidth(LINE_WIDTH + 10);
+        dc.setPenWidth(lineHalo);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
@@ -84,7 +108,7 @@ module GraphRenderer {
         }
         // Medium bloom
         dc.setStroke(Graphics.createColor(60, lr, lg, lb));
-        dc.setPenWidth(LINE_WIDTH + 4);
+        dc.setPenWidth(lineBloom);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
@@ -112,13 +136,13 @@ module GraphRenderer {
             var db = dotColor & 0xFF;
             // Outer halo
             dc.setFill(Graphics.createColor(20, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, DOT_RADIUS * 3);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, haloOuter);
             // Inner halo
             dc.setFill(Graphics.createColor(60, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, DOT_RADIUS * 2);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, haloInner);
             // Bright core
             dc.setFill(Graphics.createColor(255, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, DOT_RADIUS);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, dotR);
         }
         dc.setAntiAlias(false);
     }

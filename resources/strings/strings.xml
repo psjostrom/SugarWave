@@ -2,6 +2,7 @@
     <string id="AppName">SugarWave</string>
     <string id="bgLowTitle">Low Threshold (mmol/L)</string>
     <string id="bgHighTitle">High Threshold (mmol/L)</string>
+    <string id="cgmIntervalTitle">CGM Reading Interval</string>
     <string id="graphDurationTitle">Graph Duration</string>
     <string id="comp1Title">Complication 1</string>
     <string id="comp2Title">Complication 2</string>

@@ -32,6 +32,7 @@ class SugarWaveView extends WatchUi.WatchFace {
     hidden var mBgLow as Float = 4.0f;
     hidden var mBgHigh as Float = 10.0f;
     hidden var mGraphDuration as Number = 60;
+    hidden var mCgmInterval as Number = 1;
     hidden var mComps as Array = [0, 7, 8, 3];
     hidden var mLowPowerEnabled as Boolean = true;
 
@@ -125,6 +126,10 @@ class SugarWaveView extends WatchUi.WatchFace {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur != null && dur instanceof Number) {
             mGraphDuration = dur as Number;
+        }
+        var interval = Application.Properties.getValue("cgmInterval");
+        if (interval != null && interval instanceof Number && (interval as Number) >= 1) {
+            mCgmInterval = interval as Number;
         }
         for (var i = 0; i < 4; i++) {
             var val = Application.Properties.getValue(
@@ -580,9 +585,20 @@ class SugarWaveView extends WatchUi.WatchFace {
             mmolVal += yStep;
         }
 
-        // Time setup
+        // Time setup — dynamic window from actual data span
         var newestTime = Time.now().value().toLong() * 1000l;
-        var oldestTime = newestTime - DETAIL_DURATION_MS;
+        var detailDurationMs = DETAIL_DURATION_MS;
+        if (mHistory.size() > 1) {
+            var oldest = (mHistory[mHistory.size() - 1] as Dictionary)[:time] as Long;
+            var newest = (mHistory[0] as Dictionary)[:time] as Long;
+            var span = newest - oldest;
+            if (span > 0 && span < detailDurationMs) {
+                // Pad by 10% on each side for breathing room
+                detailDurationMs = span + span / 5;
+                if (detailDurationMs < 600000l) { detailDurationMs = 600000l; } // min 10 min
+            }
+        }
+        var oldestTime = newestTime - detailDurationMs;
 
         // X-axis time labels — tighter radius to prevent edge overflow
         var nowInfo = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
@@ -593,7 +609,8 @@ class SugarWaveView extends WatchUi.WatchFace {
         var rInset = r - 24;
         var rInsetSq = rInset * rInset;
 
-        for (var hOffset = -6; hOffset <= 0; hOffset++) {
+        var maxHoursBack = (detailDurationMs / 3600000l).toNumber() + 1;
+        for (var hOffset = -maxHoursBack; hOffset <= 0; hOffset++) {
             var labelHour = currentHour + hOffset;
             while (labelHour < 0) {
                 labelHour += 24;
@@ -611,7 +628,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                 graphX,
                 graphW,
                 newestTime,
-                DETAIL_DURATION_MS
+                detailDurationMs
             );
             var xdx = lx - r;
             var xdy = xLabelY - r;
@@ -648,7 +665,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                 graphX,
                 graphW,
                 newestTime,
-                DETAIL_DURATION_MS
+                detailDurationMs
             );
             var py = GraphRenderer.mmolToPixelY(
                 bg,
@@ -664,6 +681,30 @@ class SugarWaveView extends WatchUi.WatchFace {
             return;
         }
 
+        // Adaptive glow — scale by point density
+        var ds = 1.0f;
+        if (points.size() > 1) {
+            var totalDx = 0;
+            for (var i = 1; i < points.size(); i++) {
+                var dx = (points[i] as Dictionary)[:px] as Number - (points[i-1] as Dictionary)[:px] as Number;
+                if (dx < 0) { dx = -dx; }
+                totalDx += dx;
+            }
+            var avgSpacing = totalDx.toFloat() / (points.size() - 1);
+            ds = avgSpacing / 12.0f;
+            if (ds > 1.0f) { ds = 1.0f; }
+            if (ds < 0.3f) { ds = 0.3f; }
+        }
+
+        var dLineHalo = 1 + (4.0f * ds).toNumber();
+        var dLineBloom = 1 + (2.0f * ds).toNumber();
+        var dDotR = (2.0f * ds).toNumber();
+        if (dDotR < 1) { dDotR = 1; }
+        var dHaloOuter = (5.0f * ds).toNumber();
+        if (dHaloOuter < dDotR + 1) { dHaloOuter = dDotR + 1; }
+        var dHaloInner = (3.0f * ds).toNumber();
+        if (dHaloInner < dDotR) { dHaloInner = dDotR; }
+
         // Neon glow connecting lines
         dc.setAntiAlias(true);
         var lr = 0xff;
@@ -671,7 +712,7 @@ class SugarWaveView extends WatchUi.WatchFace {
         var lb = 0x66;
 
         dc.setStroke(Graphics.createColor(25, lr, lg, lb));
-        dc.setPenWidth(5);
+        dc.setPenWidth(dLineHalo);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
@@ -683,7 +724,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             );
         }
         dc.setStroke(Graphics.createColor(60, lr, lg, lb));
-        dc.setPenWidth(3);
+        dc.setPenWidth(dLineBloom);
         for (var i = 1; i < points.size(); i++) {
             var prev = points[i - 1] as Dictionary;
             var curr = points[i] as Dictionary;
@@ -717,11 +758,11 @@ class SugarWaveView extends WatchUi.WatchFace {
             var dg = (dotColor >> 8) & 0xff;
             var db = dotColor & 0xff;
             dc.setFill(Graphics.createColor(25, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 5);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, dHaloOuter);
             dc.setFill(Graphics.createColor(80, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 3);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, dHaloInner);
             dc.setFill(Graphics.createColor(255, dr, dg, db));
-            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, 2);
+            dc.fillCircle(pt[:px] as Number, pt[:py] as Number, dDotR);
         }
         dc.setAntiAlias(false);
     }
@@ -818,7 +859,7 @@ class SugarWaveView extends WatchUi.WatchFace {
         x += deltaW + gap;
 
         dc.setColor(
-            Conversions.staleColor(minutesSince),
+            Conversions.staleColor(minutesSince, mCgmInterval),
             Graphics.COLOR_TRANSPARENT
         );
         dc.drawText(
@@ -929,7 +970,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                   ).toNumber()
                 : -1;
         var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
-        var ageColor = Conversions.staleColor(minutesSince);
+        var ageColor = Conversions.staleColor(minutesSince, mCgmInterval);
 
         // Layout: [arrow] gap [BG] gap [delta] gap [age]
         var arrowSize = (h * 0.06f).toNumber();
@@ -979,8 +1020,8 @@ class SugarWaveView extends WatchUi.WatchFace {
             bgText,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
         );
-        // Strikethrough when data is ≥10 min stale
-        if (minutesSince >= Conversions.STALE_MINUTES) {
+        // Strikethrough when data is stale
+        if (minutesSince >= Conversions.staleThreshold(mCgmInterval)) {
             dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
             dc.setPenWidth(3);
             dc.drawLine(bgX, cy, bgX + bgW, cy);
@@ -1082,7 +1123,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             );
 
             // Strikethrough when stale
-            if (minutesSince >= Conversions.STALE_MINUTES) {
+            if (minutesSince >= Conversions.staleThreshold(mCgmInterval)) {
                 var bgW = dc.getTextWidthInPixels(bgText, Graphics.FONT_LARGE);
                 dc.setColor(
                     Conversions.COLOR_STALE,

@@ -12,9 +12,13 @@ class SugarWaveBgService extends System.ServiceDelegate {
     }
 
     function onTemporalEvent() {
-        // Match count to graph duration setting (minutes ≈ readings at 1/min)
         var dur = Application.Properties.getValue("graphDuration");
-        var count = (dur != null && dur instanceof Number) ? dur as Number : 60;
+        if (dur == null || !(dur instanceof Number)) { dur = 60; }
+        var interval = Application.Properties.getValue("cgmInterval");
+        if (interval == null || !(interval instanceof Number) || (interval as Number) < 1) { interval = 1; }
+        var count = (dur as Number) / (interval as Number);
+        if (count > 90) { count = 90; }
+        if (count < 6) { count = 6; }
         Communications.makeWebRequest(
             Secrets.SPRINGA_URL + "/api/sgv?count=" + count,
             null,

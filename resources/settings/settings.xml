@@ -18,6 +18,12 @@
             <listEntry value="120">12.0</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.cgmInterval" title="@Strings.cgmIntervalTitle">
+        <settingConfig type="list">
+            <listEntry value="1">1 min (Libre 3)</listEntry>
+            <listEntry value="5">5 min (Dexcom, etc.)</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.graphDuration" title="@Strings.graphDurationTitle">
         <settingConfig type="list">
             <listEntry value="30">30 min</listEntry>

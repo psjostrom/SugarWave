@@ -2,6 +2,7 @@
     <property id="bgLow" type="number">40</property>
     <property id="bgHigh" type="number">100</property>
     <property id="graphDuration" type="number">60</property>
+    <property id="cgmInterval" type="number">1</property>
     <property id="comp1" type="number">0</property>
     <property id="comp2" type="number">7</property>
     <property id="comp3" type="number">3</property>
