@@ -17,15 +17,12 @@ class SugarWaveBgService extends System.ServiceDelegate {
     function onTemporalEvent() {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur == null || !(dur instanceof Number)) { dur = 60; }
-        var interval = Application.Properties.getValue("cgmInterval");
-        if (interval == null || !(interval instanceof Number) || (interval as Number) < 1) { interval = 1; }
-        var count = (dur as Number) / (interval as Number);
+        var count = dur as Number;
         if (count < 6) { count = 6; }
         Communications.makeWebRequest(
-            Secrets.SPRINGA_URL + "/api/sgv?count=" + count,
+            "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + count,
             null,
             {
-                :headers => { "api-secret" => Secrets.SPRINGA_SECRET },
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceive)

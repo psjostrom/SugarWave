@@ -17,7 +17,7 @@ module Conversions {
     const GRAPH_Y_MIN = 2.0f;
     const GRAPH_Y_MAX = 20.0f;
     const MGDL_TO_MMOL = 18.018f;
-    const STALE_MINUTES = 10; // default, overridden by staleThreshold()
+    const STALE_MINUTES = 11;
 
     // Retrowave neon palette — AMOLED optimized (bright neons on pure black)
     const COLOR_NEON_CYAN = 0x00FFFF;
@@ -83,19 +83,11 @@ module Conversions {
         return COLOR_GRAPH_DOT_IN_RANGE;
     }
 
-    // Staleness thresholds scale with CGM interval:
-    //   1-min (Libre 3): fresh <3, warning <5, stale >=5
-    //   5-min (Dexcom):  fresh <7, warning <10, stale >=10
-    function staleColor(minutes as Number, interval as Number) as Number {
+    function staleColor(minutes as Number) as Number {
         if (minutes < 0) { return COLOR_NEON_CYAN; }
-        if (minutes < interval + 2) { return COLOR_NEON_CYAN; }
-        if (minutes < staleThreshold(interval)) { return COLOR_STALE_WARNING; }
+        if (minutes < 6) { return COLOR_NEON_CYAN; }
+        if (minutes < STALE_MINUTES) { return COLOR_STALE_WARNING; }
         return COLOR_STALE;
-    }
-
-    function staleThreshold(interval as Number) as Number {
-        var t = interval * 2 + 3;
-        return t > 10 ? 10 : t;
     }
 
     function glowColor(bright as Number) as Number {

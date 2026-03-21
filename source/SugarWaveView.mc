@@ -32,7 +32,6 @@ class SugarWaveView extends WatchUi.WatchFace {
     hidden var mBgLow as Float = 4.0f;
     hidden var mBgHigh as Float = 10.0f;
     hidden var mGraphDuration as Number = 60;
-    hidden var mCgmInterval as Number = 1;
     hidden var mComps as Array = [0, 7, 8, 3];
     hidden var mLowPowerEnabled as Boolean = true;
 
@@ -126,10 +125,6 @@ class SugarWaveView extends WatchUi.WatchFace {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur != null && dur instanceof Number) {
             mGraphDuration = dur as Number;
-        }
-        var interval = Application.Properties.getValue("cgmInterval");
-        if (interval != null && interval instanceof Number && (interval as Number) >= 1) {
-            mCgmInterval = interval as Number;
         }
         for (var i = 0; i < 4; i++) {
             var val = Application.Properties.getValue(
@@ -859,7 +854,7 @@ class SugarWaveView extends WatchUi.WatchFace {
         x += deltaW + gap;
 
         dc.setColor(
-            Conversions.staleColor(minutesSince, mCgmInterval),
+            Conversions.staleColor(minutesSince),
             Graphics.COLOR_TRANSPARENT
         );
         dc.drawText(
@@ -970,7 +965,7 @@ class SugarWaveView extends WatchUi.WatchFace {
                   ).toNumber()
                 : -1;
         var ageText = minutesSince >= 0 ? minutesSince.toString() + "'" : "-";
-        var ageColor = Conversions.staleColor(minutesSince, mCgmInterval);
+        var ageColor = Conversions.staleColor(minutesSince);
 
         // Layout: [arrow] gap [BG] gap [delta] gap [age]
         var arrowSize = (h * 0.06f).toNumber();
@@ -1021,7 +1016,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
         );
         // Strikethrough when data is stale
-        if (minutesSince >= Conversions.staleThreshold(mCgmInterval)) {
+        if (minutesSince >= Conversions.STALE_MINUTES) {
             dc.setColor(Conversions.COLOR_STALE, Graphics.COLOR_TRANSPARENT);
             dc.setPenWidth(3);
             dc.drawLine(bgX, cy, bgX + bgW, cy);
@@ -1123,7 +1118,7 @@ class SugarWaveView extends WatchUi.WatchFace {
             );
 
             // Strikethrough when stale
-            if (minutesSince >= Conversions.staleThreshold(mCgmInterval)) {
+            if (minutesSince >= Conversions.STALE_MINUTES) {
                 var bgW = dc.getTextWidthInPixels(bgText, Graphics.FONT_LARGE);
                 dc.setColor(
                     Conversions.COLOR_STALE,
