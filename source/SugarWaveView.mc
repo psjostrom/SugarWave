@@ -930,12 +930,17 @@ class SugarWaveView extends WatchUi.WatchFace {
         var cy = (h * 0.84f).toNumber();
 
         if (mReadings == null || mReadings.size() == 0) {
+            var errVal = Application.Storage.getValue("cgmError");
+            var errText = "---";
+            if (errVal != null && errVal instanceof Number) {
+                errText = "E:" + errVal.toString();
+            }
             NeonRenderer.drawGlowText(
                 dc,
                 w / 2,
                 cy,
                 Graphics.FONT_LARGE,
-                "---",
+                errText,
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER,
                 Conversions.COLOR_DATE,
                 Conversions.COLOR_DIM_PURPLE

@@ -41,9 +41,9 @@ Fetches CGM data from a Nightscout-compatible server over HTTPS. Requires an int
 **Setup:**
 1. In the watchface settings, set Data Source to **Nightscout (remote)**
 2. Enter your Nightscout URL (without `https://`), e.g. `my-ns-site.herokuapp.com`
-3. If your Nightscout requires authentication, enter a readable access token
+3. If your Nightscout requires authentication, enter the API secret (the `API_SECRET` value from your Nightscout configuration)
 
-**Generate a token:** Open your Nightscout site > Admin Tools > Add new Subject. Set a name (e.g. `garmin`) and role `readable`, then copy the token (looks like `garmin-XXXXXXXXXXXX`).
+The secret is sent as an `api-secret` header, matching how xDrip+, Loop, Spike, and other Nightscout clients authenticate.
 
 **Test:** Visit `https://<YOUR-URL>/api/v1/entries/sgv.json?count=2` in a browser. If you see JSON with glucose values, it's configured correctly.
 
@@ -56,7 +56,7 @@ Configure via the Garmin Connect Mobile app or Garmin Express:
 |---------|---------|---------|
 | Data Source | Strimma/xDrip+ (local) / Nightscout (remote) | Local |
 | Nightscout URL | your-site.example.com | (empty) |
-| Nightscout Token | readable access token | (empty) |
+| API Secret | Nightscout API secret | (empty) |
 | Low Threshold | 3.0 – 5.0 mmol/L | 4.0 |
 | High Threshold | 7.0 – 12.0 mmol/L | 10.0 |
 | Graph Duration | 30 / 60 / 90 / 120 / 150 / 180 min | 60 |

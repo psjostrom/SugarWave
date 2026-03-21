@@ -34,11 +34,12 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 return;
             }
             url = "https://" + nsUrl + "/api/v1/entries/sgv.json?count=" + count;
-            var token = Application.Properties.getValue("nightscoutToken");
-            if (token != null && token instanceof String && (token as String).length() > 0) {
-                url = url + "&token=" + token;
+            var secret = Application.Properties.getValue("nightscoutToken");
+            if (secret != null && secret instanceof String && (secret as String).length() > 0) {
+                headers = { "api-secret" => secret };
+            } else {
+                headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
             }
-            headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
         } else {
             // Strimma / xDrip+ (local)
             url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + count;

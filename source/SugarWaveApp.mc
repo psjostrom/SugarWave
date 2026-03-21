@@ -35,10 +35,13 @@ class SugarWaveApp extends Application.AppBase {
             var arr = data as Array;
             if (arr[0] instanceof Dictionary && (arr[0] as Dictionary).hasKey("date")) {
                 Application.Storage.setValue("cgmReadings", data);
+                Application.Storage.deleteValue("cgmError");
                 var d = (arr[0] as Dictionary)["date"];
                 if (d instanceof Long) { latestDateMs = d as Long; }
                 else if (d instanceof Number) { latestDateMs = (d as Number).toLong(); }
             }
+        } else if (data instanceof Number) {
+            Application.Storage.setValue("cgmError", data as Number);
         }
         scheduleNextPoll(latestDateMs);
     }
