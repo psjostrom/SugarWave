@@ -12,7 +12,11 @@ Never make a medical decision based on a reading that you see on this app. Alway
 ------------------------
 ## Data Source
 
-SugarWave fetches CGM data from a local web server on your phone via the Garmin Connect Mobile proxy. Compatible sources:
+SugarWave supports two data sources, configured in the watchface settings:
+
+### Option 1: Strimma / xDrip+ (local, default)
+
+Fetches CGM data from a local web server on your phone via the Garmin Connect Mobile proxy. Compatible sources:
 
 1. **Strimma** (Android) — recommended
 2. **xDrip+** (Android)
@@ -20,20 +24,28 @@ SugarWave fetches CGM data from a local web server on your phone via the Garmin 
 
 All three serve data on `http://127.0.0.1:17580/sgv.json`. No internet connection required.
 
-### Setup — Strimma
-1. In Strimma, enable the local web server (Settings > Data > Local Web Server)
-2. Install the watchface on your Garmin device
+**Setup — Strimma:** Enable the local web server (Settings > Data > Local Web Server)
 
-### Setup — xDrip+
-1. In xDrip+, enable the web server (Settings > Inter-App Settings > enable "xDrip Web Server", but *not* "Open Web Server")
-2. Install the watchface on your Garmin device
+**Setup — xDrip+:** Enable the web server (Settings > Inter-App Settings > enable "xDrip Web Server", but *not* "Open Web Server")
 
-### Setup — Diabox
-1. In Diabox, enable "Share data with smartwatches" (Settings > Integrations)
-2. Install the watchface on your Garmin device
+**Setup — Diabox:** Enable "Share data with smartwatches" (Settings > Integrations)
 
-### Test your setup
-Query `http://127.0.0.1:17580/sgv.json?count=2` in your phone's browser. If you see JSON with timestamps and glucose values, the data source is configured correctly.
+**Test:** Query `http://127.0.0.1:17580/sgv.json?count=2` in your phone's browser. If you see JSON with timestamps and glucose values, the data source is configured correctly.
+
+**Known issue:** The local server mode relies on Garmin Connect Mobile's localhost proxy, which is known to be flaky. Requests may intermittently time out (-300 errors) even when the local server is running correctly. This appears to be a Garmin Connect Mobile issue, not a problem with Strimma or xDrip+. If you experience persistent timeouts, try restarting Garmin Connect Mobile or switching to Nightscout mode.
+
+### Option 2: Nightscout (remote)
+
+Fetches CGM data from a Nightscout-compatible server over HTTPS. Requires an internet connection.
+
+**Setup:**
+1. In the watchface settings, set Data Source to **Nightscout (remote)**
+2. Enter your Nightscout URL (without `https://`), e.g. `my-ns-site.herokuapp.com`
+3. If your Nightscout requires authentication, enter a readable access token
+
+**Generate a token:** Open your Nightscout site > Admin Tools > Add new Subject. Set a name (e.g. `garmin`) and role `readable`, then copy the token (looks like `garmin-XXXXXXXXXXXX`).
+
+**Test:** Visit `https://<YOUR-URL>/api/v1/entries/sgv.json?count=2` in a browser. If you see JSON with glucose values, it's configured correctly.
 
 ------------------------
 ## Watchface Settings
@@ -42,6 +54,9 @@ Configure via the Garmin Connect Mobile app or Garmin Express:
 
 | Setting | Options | Default |
 |---------|---------|---------|
+| Data Source | Strimma/xDrip+ (local) / Nightscout (remote) | Local |
+| Nightscout URL | your-site.example.com | (empty) |
+| Nightscout Token | readable access token | (empty) |
 | Low Threshold | 3.0 – 5.0 mmol/L | 4.0 |
 | High Threshold | 7.0 – 12.0 mmol/L | 10.0 |
 | Graph Duration | 30 / 60 / 90 / 120 / 150 / 180 min | 60 |
@@ -66,10 +81,11 @@ Configure via the Garmin Connect Mobile app or Garmin Express:
 | `Error: -1` | Generic BLE error | Check Bluetooth settings |
 | `Error: -2` | BLE timeout | Check Bluetooth settings |
 | `Error: -104` | No BLE connection | Check Bluetooth settings |
-| `Error: -300` | Request timed out | Verify Strimma/xDrip+ web server is enabled |
-| `Error: -400` | Invalid response body | Check Strimma/xDrip+ configuration |
+| `Error: -300` | Request timed out | Local mode: GCM proxy may be flaky — restart GCM or try Nightscout mode. Remote mode: check internet connection. |
+| `Error: -400` | Invalid response body | Check data source configuration |
+| `Error: -401` | Unauthorized | Nightscout mode: check URL and token |
 | `Error: -403` | Out of memory | Report as bug |
-| `Error: -404` | Page not found | Verify Strimma/xDrip+ web server is running |
+| `Error: -404` | Page not found | Local mode: verify web server is running. Nightscout mode: check URL. |
 
 *Q: The glucose data doesn't appear immediately.*
 A: The Garmin SDK only allows data polling every 5 minutes. Wait at least 5 minutes after setup.

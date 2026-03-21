@@ -1,5 +1,8 @@
 <strings>
     <string id="AppName">SugarWave</string>
+    <string id="dataSourceTitle">Data Source</string>
+    <string id="nightscoutUrlTitle">Nightscout URL (without https://)</string>
+    <string id="nightscoutTokenTitle">Nightscout Token (optional)</string>
     <string id="bgLowTitle">Low Threshold (mmol/L)</string>
     <string id="bgHighTitle">High Threshold (mmol/L)</string>
     <string id="graphDurationTitle">Graph Duration</string>

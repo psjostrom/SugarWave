@@ -19,10 +19,37 @@ class SugarWaveBgService extends System.ServiceDelegate {
         if (dur == null || !(dur instanceof Number)) { dur = 60; }
         var count = dur as Number;
         if (count < 6) { count = 6; }
+
+        var source = Application.Properties.getValue("dataSource");
+        if (source == null || !(source instanceof Number)) { source = 0; }
+
+        var url = "";
+        var headers = {} as Dictionary;
+
+        if ((source as Number) == 1) {
+            // Nightscout (remote HTTPS)
+            var nsUrl = Application.Properties.getValue("nightscoutUrl");
+            if (nsUrl == null || !(nsUrl instanceof String) || (nsUrl as String).length() == 0) {
+                Background.exit(-1);
+                return;
+            }
+            url = "https://" + nsUrl + "/api/v1/entries/sgv.json?count=" + count;
+            var token = Application.Properties.getValue("nightscoutToken");
+            if (token != null && token instanceof String && (token as String).length() > 0) {
+                url = url + "&token=" + token;
+            }
+            headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
+        } else {
+            // Strimma / xDrip+ (local)
+            url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + count;
+            headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
+        }
+
         Communications.makeWebRequest(
-            "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + count,
-            null,
+            url,
+            {},
             {
+                :headers => headers,
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceive)

@@ -1,4 +1,16 @@
 <settings>
+    <setting propertyKey="@Properties.dataSource" title="@Strings.dataSourceTitle">
+        <settingConfig type="list">
+            <listEntry value="0">Strimma / xDrip+ (local)</listEntry>
+            <listEntry value="1">Nightscout (remote)</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.nightscoutUrl" title="@Strings.nightscoutUrlTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.nightscoutToken" title="@Strings.nightscoutTokenTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
     <setting propertyKey="@Properties.bgLow" title="@Strings.bgLowTitle">
         <settingConfig type="list">
             <listEntry value="30">3.0</listEntry>
