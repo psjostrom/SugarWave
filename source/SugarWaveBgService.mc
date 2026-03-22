@@ -14,6 +14,16 @@ class SugarWaveBgService extends System.ServiceDelegate {
     // Max entries through Background.exit() — empirically 90 works, 120 fails
     const BG_EXIT_MAX = 90;
 
+    hidden function normalizeUrl(raw as String) as String {
+        if (raw.find("https://") == 0 || raw.find("http://") == 0) {
+            if (raw.length() > 8 && raw.substring(raw.length() - 1, raw.length()).equals("/")) {
+                return raw.substring(0, raw.length() - 1);
+            }
+            return raw;
+        }
+        return "https://" + raw;
+    }
+
     function onTemporalEvent() {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur == null || !(dur instanceof Number)) { dur = 60; }
@@ -33,7 +43,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 Background.exit(-1);
                 return;
             }
-            url = "https://" + nsUrl + "/api/v1/entries/sgv.json?count=" + count;
+            url = normalizeUrl(nsUrl as String) + "/api/v1/entries/sgv.json?count=" + count;
             var secret = Application.Properties.getValue("nightscoutToken");
             if (secret != null && secret instanceof String && (secret as String).length() > 0) {
                 headers = { "api-secret" => secret };
