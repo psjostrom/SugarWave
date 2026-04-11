@@ -1,8 +1,6 @@
 build/
 bin/
-CLAUDE.md
 .vscode/
 *.prg
 .DS_Store
 image.png
-source/Secrets.mc
