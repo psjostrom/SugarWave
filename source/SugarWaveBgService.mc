@@ -47,7 +47,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 Background.exit(-1);
                 return;
             }
-            url = normalizeUrl(nsUrl as String) + "/api/v1/entries.json?count=" + BG_EXIT_MAX + "&find[date][$gt]=" + sinceMs;
+            url = normalizeUrl(nsUrl as String) + "/api/v1/entries.json?count=" + BG_EXIT_MAX + "&find%5Bdate%5D%5B%24gt%5D=" + sinceMs;
             var secret = Application.Properties.getValue("nightscoutToken");
             if (secret != null && secret instanceof String && (secret as String).length() > 0) {
                 headers = { "api-secret" => secret };
