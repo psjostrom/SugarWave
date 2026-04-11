@@ -3,6 +3,7 @@ import Toybox.System;
 import Toybox.Communications;
 import Toybox.Background;
 import Toybox.Lang;
+import Toybox.Time;
 
 (:background)
 class SugarWaveBgService extends System.ServiceDelegate {
@@ -27,8 +28,11 @@ class SugarWaveBgService extends System.ServiceDelegate {
     function onTemporalEvent() {
         var dur = Application.Properties.getValue("graphDuration");
         if (dur == null || !(dur instanceof Number)) { dur = 60; }
-        var count = dur as Number;
-        if (count < 6) { count = 6; }
+        var durationMin = dur as Number;
+        if (durationMin < 6) { durationMin = 6; }
+
+        // Time-based filtering: fetch entries from the last N minutes
+        var sinceMs = Time.now().value().toLong() * 1000l - durationMin.toLong() * 60000l;
 
         var source = Application.Properties.getValue("dataSource");
         if (source == null || !(source instanceof Number)) { source = 0; }
@@ -43,7 +47,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 Background.exit(-1);
                 return;
             }
-            url = normalizeUrl(nsUrl as String) + "/api/v1/entries/sgv.json?count=" + count;
+            url = normalizeUrl(nsUrl as String) + "/api/v1/entries.json?count=" + BG_EXIT_MAX + "&find[date][$gt]=" + sinceMs;
             var secret = Application.Properties.getValue("nightscoutToken");
             if (secret != null && secret instanceof String && (secret as String).length() > 0) {
                 headers = { "api-secret" => secret };
@@ -52,7 +56,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
             }
         } else {
             // Strimma / xDrip+ (local)
-            url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + count;
+            url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + BG_EXIT_MAX;
             headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
         }
 
