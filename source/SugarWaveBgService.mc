@@ -15,6 +15,9 @@ class SugarWaveBgService extends System.ServiceDelegate {
     // Max entries through Background.exit() — empirically 90 works, 120 fails
     const BG_EXIT_MAX = 90;
 
+    // Safe upper bound for background service JSON parsing
+    const COUNT_MAX = 60;
+
     hidden function normalizeUrl(raw as String) as String {
         if (raw.find("https://") == 0 || raw.find("http://") == 0) {
             if (raw.length() > 8 && raw.substring(raw.length() - 1, raw.length()).equals("/")) {
@@ -38,6 +41,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
         if (source == null || !(source instanceof Number)) { source = 0; }
 
         var url = "";
+        var params = {} as Dictionary;
         var headers = {} as Dictionary;
 
         if ((source as Number) == 1) {
@@ -47,7 +51,12 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 Background.exit(-1);
                 return;
             }
-            url = normalizeUrl(nsUrl as String) + "/api/v1/entries.json?count=" + BG_EXIT_MAX + "&find%5Bdate%5D%5B%24gt%5D=" + sinceMs;
+            url = normalizeUrl(nsUrl as String) + "/api/v1/entries.json";
+            // CIQ appends params dict as query string for GET requests
+            params = {
+                "count" => COUNT_MAX,
+                "find[date][$gt]" => sinceMs.toString()
+            };
             var secret = Application.Properties.getValue("nightscoutToken");
             if (secret != null && secret instanceof String && (secret as String).length() > 0) {
                 headers = { "api-secret" => secret };
@@ -56,13 +65,13 @@ class SugarWaveBgService extends System.ServiceDelegate {
             }
         } else {
             // Strimma / xDrip+ (local)
-            url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + BG_EXIT_MAX;
+            url = "http://127.0.0.1:17580/sgv.json?brief_mode=Y&count=" + COUNT_MAX;
             headers = { "Content-Type" => Communications.REQUEST_CONTENT_TYPE_URL_ENCODED };
         }
 
         Communications.makeWebRequest(
             url,
-            {},
+            params,
             {
                 :headers => headers,
                 :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
