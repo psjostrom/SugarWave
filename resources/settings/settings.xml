@@ -8,7 +8,7 @@
     <setting propertyKey="@Properties.nightscoutUrl" title="@Strings.nightscoutUrlTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
-    <setting propertyKey="@Properties.nightscoutToken" title="@Strings.nightscoutTokenTitle">
+    <setting propertyKey="@Properties.nightscoutSecret" title="@Strings.nightscoutSecretTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
     <setting propertyKey="@Properties.bgLow" title="@Strings.bgLowTitle">

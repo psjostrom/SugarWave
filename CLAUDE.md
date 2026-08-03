@@ -39,7 +39,7 @@ Secrets.mc             — API credentials (gitignored, not currently used)
 Properties in `resources/settings/properties.xml`:
 - `dataSource` — 0=local (Strimma/xDrip+), 1=Nightscout (remote HTTPS)
 - `nightscoutUrl` — Nightscout hostname (without https://)
-- `nightscoutToken` — API secret sent as `api-secret` header (not NS token — naming is legacy)
+- `nightscoutSecret` — Nightscout API secret, sent as `api-secret` header
 - `bgLow` / `bgHigh` — BG zone thresholds (stored as mmol/L * 10)
 - `graphDuration` — graph time window in minutes (30–180). Used for time-based API filtering, count capped at BG_EXIT_MAX (90).
 - `comp1`–`comp4` — complication slots (0=steps, 1=floors, 2=HR, 3=temp, 4=stress, 5=recovery, 6=cal, 7=battery body, 8=battery watch, 9=notifications)
@@ -49,7 +49,7 @@ Properties in `resources/settings/properties.xml`:
 ## Build
 
 ```bash
-SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-8.4.0-2025-12-03-5122605dc/bin"
+SDK="$(ls -dt "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/"*/bin | head -1)"  # newest installed SDK
 KEY="$HOME/Library/Application Support/Garmin/ConnectIQ/developer_key.der"
 "$SDK/monkeyc" -e -o build/SugarWave.iq -f monkey.jungle -y "$KEY" -d fr970 -w
 ```

@@ -3,7 +3,7 @@
 # Mock data is created temporarily and removed after the build.
 set -euo pipefail
 
-SDK="/Users/persjo/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-8.4.0-2025-12-03-5122605dc"
+SDK="$(ls -dt "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/"*/bin | head -1)"  # newest installed SDK
 KEY="$HOME/Library/Application Support/Garmin/ConnectIQ/developer_key.der"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SIM_SRC="$ROOT/source-sim"
@@ -68,7 +68,7 @@ sed -i '' 's|WatchFace.initialize();|WatchFace.initialize();\
 echo 'fr970.sourcePath = source;source-sim' >> "$JUNGLE"
 
 # Build
-"$SDK/bin/monkeyc" -o "$ROOT/build/SugarWave.prg" -f "$JUNGLE" -y "$KEY" -d fr970 -w
+"$SDK/monkeyc" -o "$ROOT/build/SugarWave.prg" -f "$JUNGLE" -y "$KEY" -d fr970 -w
 
 echo "Built: $ROOT/build/SugarWave.prg"
-echo "Run:   \"$SDK/bin/monkeydo\" \"$ROOT/build/SugarWave.prg\" fr970"
+echo "Run:   \"$SDK/monkeydo\" \"$ROOT/build/SugarWave.prg\" fr970"

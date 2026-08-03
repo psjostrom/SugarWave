@@ -57,7 +57,7 @@ class SugarWaveBgService extends System.ServiceDelegate {
                 "count" => COUNT_MAX,
                 "find[date][$gt]" => sinceMs.toString()
             };
-            var secret = Application.Properties.getValue("nightscoutToken");
+            var secret = Application.Properties.getValue("nightscoutSecret");
             if (secret != null && secret instanceof String && (secret as String).length() > 0) {
                 headers = { "api-secret" => secret };
             } else {
