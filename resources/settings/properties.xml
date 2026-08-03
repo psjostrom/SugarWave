@@ -1,7 +1,7 @@
 <properties>
     <property id="dataSource" type="number">0</property>
     <property id="nightscoutUrl" type="string"></property>
-    <property id="nightscoutToken" type="string"></property>
+    <property id="nightscoutSecret" type="string"></property>
     <property id="bgLow" type="number">40</property>
     <property id="bgHigh" type="number">100</property>
     <property id="graphDuration" type="number">60</property>
