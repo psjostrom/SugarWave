@@ -866,8 +866,8 @@ class SugarWaveView extends WatchUi.WatchFace {
         );
 
         // Row 2: Time-to-threshold prediction (if ≤30 min)
-        // deltaMmol is per minute
-        var deltaMmolPerMin = deltaMmol;
+        // The API's delta is the change over 5 minutes (Nightscout convention).
+        var deltaMmolPerMin = deltaMmol / 5.0f;
         var predText = null as String?;
         var predColor = 0;
 
